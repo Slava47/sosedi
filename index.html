@@ -6,7 +6,8 @@
   <title>Соседи со второго этажа</title>
   <style>
     :root {
-      --bg: #0f0e17;
+      --bg: #0a0a14;
+      --room-bg: #08080f;
       --building: #2a2845;
       --building-edge: #3d3b6e;
       --win-lit: #f4a261;
@@ -18,6 +19,7 @@
       --accent: #e9c46a;
       --accent2: #e76f51;
       --border: rgba(244, 162, 97, 0.28);
+      --sil: #2a2a3a;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
@@ -25,10 +27,9 @@
       overflow: hidden;
       background: var(--bg);
       color: var(--txt);
-      font-family: 'Courier New', Courier, monospace;
+      font-family: Arial, Helvetica, sans-serif;
       user-select: none;
     }
-    /* ── Layout ─────────────────────────────── */
     #app { display: flex; flex-direction: column; height: 100vh; }
     #header {
       flex-shrink: 0;
@@ -39,114 +40,184 @@
       z-index: 10;
     }
     #title { font-size: .85em; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; }
-    #game-time { font-size: 1.2em; color: var(--accent); min-width: 52px; text-align: center; }
+    #game-time { font-size: 1.2em; color: var(--accent); min-width: 52px; text-align: center; font-weight: bold; }
     #lang-btn {
       background: transparent; border: 1px solid var(--border); color: var(--txt-dim);
       padding: 3px 9px; cursor: pointer; font-family: inherit; font-size: .75em;
       border-radius: 3px; transition: .2s;
     }
     #lang-btn:hover { color: var(--accent); border-color: var(--accent); }
-    #scene {
+    #main-split {
+      flex: 1; display: flex; overflow: hidden; min-height: 0;
+    }
+    #player-room {
+      width: 22%; min-width: 140px; max-width: 260px;
+      background: var(--room-bg);
+      position: relative; display: flex; flex-direction: column;
+      border-right: 1px solid rgba(60,50,100,.3);
+    }
+    #room-darkness {
       flex: 1;
+      background: radial-gradient(ellipse at 50% 80%, rgba(20,18,42,.6), #08080f 70%);
       position: relative;
-      overflow: hidden;
+    }
+    #room-label {
+      position: absolute; top: 12px; left: 12px;
+      font-size: .6em; color: var(--txt-dim); opacity: .5;
+      letter-spacing: 1px; text-transform: uppercase;
+    }
+    #windowsill {
+      min-height: 70px;
+      background: linear-gradient(180deg, #1a1830 0%, #12101e 40%, #0d0b16 100%);
+      border-top: 2px solid #2a2650;
+      position: relative; display: flex; align-items: center; justify-content: center;
+      gap: 6px; padding: 8px 6px; flex-wrap: wrap;
+    }
+    #windowsill::before {
+      content: ''; position: absolute;
+      top: -1px; left: 10%; right: 10%; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(244,162,97,.15), transparent);
+    }
+    .sill-item {
+      background: rgba(25,20,50,.9); border: 1px solid var(--border);
+      color: var(--txt); padding: 5px 8px; cursor: pointer; border-radius: 4px;
+      font-family: inherit; font-size: .68em; transition: .2s;
+      white-space: nowrap; text-align: center; min-width: 50px;
+    }
+    .sill-item:hover { border-color: var(--accent); color: var(--accent); }
+    .sill-item.active { border-color: var(--accent); color: var(--accent); background: rgba(60,50,110,.9); box-shadow: 0 0 8px rgba(233,196,106,.3); }
+    .sill-item.spent { opacity: .3; cursor: default; pointer-events: none; }
+    .sill-item.dragging { opacity: .5; transform: scale(.9); }
+    #scene {
+      flex: 1; position: relative; overflow: hidden;
       display: flex; align-items: flex-end; justify-content: center;
     }
-    /* ── Sky ─────────────────────────────────── */
     #sky {
       position: absolute; inset: 0;
-      background: linear-gradient(180deg, #0f0e17, #1a1535 65%, #2a1f4a);
+      background: linear-gradient(180deg, #0a0a14, #1a1535 65%, #2a1f4a);
       transition: background 3s;
     }
-    #stars { position: absolute; inset: 0; pointer-events: none; }
+    #stars { position: absolute; inset: 0; pointer-events: none; transition: opacity 2s; }
     .star {
       position: absolute; background: #fff; border-radius: 50%;
       animation: twinkle 2s infinite alternate;
     }
     @keyframes twinkle { from { opacity: .25 } to { opacity: 1 } }
-    /* ── Rain ────────────────────────────────── */
     #rain { position: absolute; inset: 0; pointer-events: none; overflow: hidden; opacity: 0; transition: opacity 2s; }
     #rain.on { opacity: .45; }
     .rd {
       position: absolute; width: 1px;
       background: linear-gradient(180deg, transparent, #8ab4cc);
-      animation: fall linear infinite;
+      animation: fall linear infinite; transform: rotate(8deg);
     }
-    @keyframes fall { from { transform: translateY(-30px); opacity: 0; } 20% { opacity: 1; } 90% { opacity: 1; } to { transform: translateY(110vh); opacity: 0; } }
-    /* ── Building ────────────────────────────── */
+    @keyframes fall { from { transform: translateY(-30px) rotate(8deg); opacity: 0; } 20% { opacity: 1; } 90% { opacity: 1; } to { transform: translateY(110vh) rotate(8deg); opacity: 0; } }
     #building-wrap {
       position: relative; z-index: 2;
-      width: min(92vw, 580px);
-      padding-bottom: 0;
+      width: min(92%, 560px); padding-bottom: 0;
     }
     #roof {
-      height: 18px;
-      background: var(--building-edge);
+      height: 22px; background: var(--building-edge);
       clip-path: polygon(0 100%, 100% 100%, 97% 0, 3% 0);
-      margin-bottom: -1px;
+      margin-bottom: -1px; position: relative;
+    }
+    #roof::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+      height: 3px; background: rgba(255,255,255,.06);
     }
     #building {
       background: var(--building);
-      border: 3px solid var(--building-edge);
-      border-top: none;
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
-      padding: 10px;
+      border: 3px solid var(--building-edge); border-top: none;
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 8px; padding: 12px; position: relative;
+    }
+    #building::before {
+      content: ''; position: absolute; inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 30px, rgba(255,255,255,.015) 30px, rgba(255,255,255,.015) 31px);
+      pointer-events: none;
     }
     #ground {
       height: 38px;
-      background: linear-gradient(180deg, #18152e, #0f0e17);
+      background: linear-gradient(180deg, #18152e, #0a0a14);
       border-top: 2px solid #221f3a;
     }
-    /* ── Apartment windows ───────────────────── */
     .apt {
-      aspect-ratio: 1;
-      min-height: 52px;
+      aspect-ratio: 2/3; min-height: 60px;
       background: var(--win-dark);
-      border: 2px solid #1a1835;
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
+      border: 1px solid rgba(255,255,255,.12);
+      cursor: pointer; position: relative; overflow: hidden;
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
       transition: transform .15s, border-color .15s, box-shadow .3s;
     }
     .apt:hover { transform: scale(1.06); border-color: var(--accent); z-index: 3; }
-    .apt.lit { background: var(--win-lit); border-color: #d4923a; box-shadow: 0 0 14px rgba(244,162,97,.45); }
-    .apt.dim { background: var(--win-dim); border-color: #b06820; box-shadow: 0 0 6px rgba(244,162,97,.2); }
+    .apt.lit {
+      background: linear-gradient(160deg, #f4a261 0%, #e8924a 50%, #d4824a 100%);
+      border-color: rgba(255,255,255,.2);
+      box-shadow: 0 0 16px rgba(244,162,97,.4), inset 0 0 20px rgba(255,200,100,.1);
+    }
+    .apt.dim {
+      background: linear-gradient(160deg, #d4824a, #b06820);
+      border-color: rgba(255,255,255,.1);
+      box-shadow: 0 0 6px rgba(244,162,97,.2);
+    }
     .apt.sel { border-color: var(--accent) !important; box-shadow: 0 0 22px var(--accent) !important; z-index: 4; }
     .apt.curtain::after {
-      content: '';
-      position: absolute; inset: 0;
-      background: repeating-linear-gradient(90deg, rgba(60,35,10,.52) 0px, rgba(60,35,10,.3) 7px, rgba(60,35,10,.52) 14px);
+      content: ''; position: absolute; inset: 0;
+      background: repeating-linear-gradient(90deg, rgba(60,35,10,.55) 0px, rgba(60,35,10,.3) 7px, rgba(60,35,10,.55) 14px);
+      pointer-events: none; z-index: 1;
+    }
+    .apt::before {
+      content: ''; position: absolute; inset: 0;
+      background:
+        linear-gradient(90deg, transparent calc(50% - 1px), rgba(255,255,255,.18) calc(50% - 1px), rgba(255,255,255,.18) calc(50% + 1px), transparent calc(50% + 1px)),
+        linear-gradient(180deg, transparent calc(33% - 1px), rgba(255,255,255,.18) calc(33% - 1px), rgba(255,255,255,.18) calc(33% + 1px), transparent calc(33% + 1px));
+      pointer-events: none; z-index: 5;
+    }
+    .win-reflection {
+      position: absolute; top: 5%; left: 5%; width: 30%; height: 20%;
+      background: radial-gradient(ellipse at 30% 30%, rgba(100,120,180,.08), transparent 70%);
       pointer-events: none;
     }
-    .apt-icon { font-size: 1.35em; pointer-events: none; line-height: 1; }
     .apt-lbl {
       font-size: .42em; text-align: center; pointer-events: none;
-      color: rgba(0,0,0,.5); line-height: 1.1; padding: 0 2px;
-      max-width: 100%; overflow: hidden;
+      color: rgba(0,0,0,.5); line-height: 1.1; padding: 2px 2px 4px;
+      max-width: 100%; overflow: hidden; position: relative; z-index: 2;
     }
     .apt.lit .apt-lbl { color: rgba(0,0,0,.55); }
-    /* ── Controls bar ────────────────────────── */
+    .sil-wrap {
+      position: absolute; inset: 0;
+      display: flex; align-items: flex-end; justify-content: center;
+      pointer-events: none; z-index: 2;
+    }
+    .sil-wrap svg { width: 70%; height: 65%; overflow: visible; }
+    .sil-wrap svg * { fill: var(--sil); transition: transform .6s ease, opacity .4s; }
+    @keyframes tv-flicker {
+      0%   { background-color: rgba(100,140,200,.12); }
+      25%  { background-color: rgba(120,160,220,.18); }
+      50%  { background-color: rgba(80,120,180,.10); }
+      75%  { background-color: rgba(130,170,230,.16); }
+      100% { background-color: rgba(100,140,200,.12); }
+    }
+    .tv-glow {
+      position: absolute; inset: 0;
+      animation: tv-flicker .25s steps(4) infinite;
+      pointer-events: none; z-index: 0;
+    }
+    @keyframes sil-sway { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(2deg); } }
+    @keyframes sil-dance1 { 0%, 100% { transform: translateX(0) rotate(0deg); } 25% { transform: translateX(-3px) rotate(-8deg); } 75% { transform: translateX(3px) rotate(8deg); } }
+    @keyframes sil-dance2 { 0%, 100% { transform: rotate(0deg) scaleX(1); } 50% { transform: rotate(5deg) scaleX(-1); } }
+    @keyframes sil-breathe { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.02); } }
+    @keyframes sil-nod { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(2px); } }
+    .sil-animate { animation: sil-sway 4s ease-in-out infinite; }
+    .sil-dance { animation: sil-dance1 1.2s ease-in-out infinite; }
+    .sil-dance2 { animation: sil-dance2 2s ease-in-out infinite; }
+    .sil-breathe { animation: sil-breathe 3s ease-in-out infinite; }
+    .sil-nod { animation: sil-nod 2s ease-in-out infinite; }
     #controls {
-      flex-shrink: 0;
-      background: rgba(8, 6, 20, 0.95);
-      border-top: 1px solid var(--border);
-      padding: 7px 10px;
-      display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
-      z-index: 10;
+      flex-shrink: 0; background: rgba(8, 6, 20, 0.95);
+      border-top: 1px solid var(--border); padding: 7px 10px;
+      display: flex; gap: 6px; align-items: center; flex-wrap: wrap; z-index: 10;
     }
-    #inventory { display: flex; gap: 5px; flex-wrap: wrap; flex: 1; }
-    .item-slot {
-      background: rgba(25,20,50,.8); border: 1px solid var(--border);
-      color: var(--txt); padding: 5px 10px; cursor: pointer; border-radius: 4px;
-      font-family: inherit; font-size: .78em; transition: .2s; white-space: nowrap;
-    }
-    .item-slot:hover { border-color: var(--accent); }
-    .item-slot.active { border-color: var(--accent); color: var(--accent); background: rgba(60,50,110,.9); }
-    .item-slot.spent { opacity: .35; cursor: default; }
+    #controls-info { flex: 1; font-size: .7em; color: var(--txt-dim); }
     .ctrl-btn {
       background: rgba(25,20,50,.8); border: 1px solid var(--border); color: var(--txt);
       padding: 5px 12px; cursor: pointer; border-radius: 4px;
@@ -157,7 +228,6 @@
       background: var(--accent2); color: #fff; font-size: .7em;
       padding: 1px 5px; border-radius: 10px; margin-left: 4px;
     }
-    /* ── Notification ────────────────────────── */
     #notif {
       position: fixed; top: 54px; left: 50%; transform: translateX(-50%);
       background: rgba(14,11,28,.97); border: 1px solid var(--accent); color: var(--accent);
@@ -166,7 +236,6 @@
       max-width: 90vw; text-overflow: ellipsis; overflow: hidden;
     }
     #notif.show { opacity: 1; }
-    /* ── Modal overlay ───────────────────────── */
     .overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,.82);
       display: none; align-items: center; justify-content: center; z-index: 200;
@@ -183,52 +252,91 @@
       background: transparent; border: 1px solid var(--border); color: var(--txt-dim);
       width: 26px; height: 26px; border-radius: 3px; cursor: pointer;
       font-family: inherit; font-size: .9em; transition: .2s;
+      display: flex; align-items: center; justify-content: center;
     }
     .close-btn:hover { color: var(--accent2); border-color: var(--accent2); }
-    /* ── Binocular obs modal ─────────────────── */
-    #obs-modal { flex-direction: column; gap: 10px; }
-    #bino-wrap { position: relative; width: min(320px, 76vw); height: min(320px, 76vw); }
-    #bino-frame {
-      width: 100%; height: 100%; border-radius: 50%;
-      background: var(--win-dark); border: 8px solid #110f22;
-      box-shadow: 0 0 0 4px #0a0816, 0 0 40px rgba(0,0,0,.9);
-      overflow: hidden; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; text-align: center;
-      padding: 22px; position: relative; transition: background .4s;
+    #bino-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.95);
+      z-index: 250; display: none; cursor: none;
     }
-    #bino-frame.lit { background: linear-gradient(145deg, #58301a, #4a2810); }
-    #bino-frame::before {
-      content: ''; position: absolute; top: 8%; left: 8%; width: 28%; height: 28%;
+    #bino-overlay.open { display: block; }
+    #bino-circle {
+      position: absolute; width: 300px; height: 300px;
+      border-radius: 50%; border: 6px solid #1a1830;
+      box-shadow: 0 0 0 3px #0a0816, 0 0 60px rgba(0,0,0,.9), inset 0 0 30px rgba(0,0,0,.3);
+      overflow: hidden; pointer-events: none;
+      transform: translate(-50%, -50%);
+    }
+    #bino-circle::before {
+      content: ''; position: absolute; top: 8%; left: 8%;
+      width: 28%; height: 28%;
       background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.07), transparent 70%);
-      border-radius: 50%; pointer-events: none;
+      border-radius: 50%; pointer-events: none; z-index: 10;
     }
-    #bino-icon { font-size: 3.6em; margin-bottom: 6px; }
-    #bino-name { color: var(--accent); font-size: .9em; font-weight: bold; margin-bottom: 5px; }
-    #bino-activity { color: var(--txt); font-size: .75em; line-height: 1.4; }
-    #bino-detail { color: var(--txt-dim); font-size: .65em; margin-top: 6px; font-style: italic; }
-    #obs-actions { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 6px; }
-    #obs-event {
-      margin-top: 9px; padding: 10px; border-left: 3px solid var(--accent);
-      background: rgba(233,196,106,.07); color: var(--txt); font-size: .78em;
-      line-height: 1.5; border-radius: 0 4px 4px 0; display: none;
+    #bino-content {
+      width: 100%; height: 100%;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 30px; position: relative;
+      background: var(--win-dark); transition: background .3s;
     }
+    #bino-content.lit { background: linear-gradient(145deg, #58301a, #4a2810); }
+    #bino-sil { width: 80px; height: 90px; margin-bottom: 6px; }
+    #bino-sil svg { width: 100%; height: 100%; }
+    #bino-sil svg * { fill: var(--sil); }
+    #bino-name { color: var(--accent); font-size: .85em; font-weight: bold; margin-bottom: 4px; }
+    #bino-activity { color: var(--txt); font-size: .72em; line-height: 1.4; }
+    #bino-detail { color: var(--txt-dim); font-size: .62em; margin-top: 4px; font-style: italic; }
+    #bino-actions {
+      display: flex; gap: 5px; flex-wrap: wrap; justify-content: center;
+    }
+    #bino-event {
+      margin-top: 6px; padding: 6px 8px;
+      border-left: 3px solid var(--accent);
+      background: rgba(233,196,106,.07); color: var(--txt);
+      font-size: .75em; line-height: 1.4; border-radius: 0 4px 4px 0;
+      display: none; max-width: 360px; text-align: left;
+    }
+    #bino-panel {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      z-index: 260; display: flex; flex-direction: column; align-items: center; gap: 8px;
+      padding: 10px 18px; background: rgba(14,11,28,.92); border: 1px solid var(--border);
+      border-radius: 8px; max-width: 90vw;
+    }
+    #bino-close-btn {
+      position: fixed; top: 16px; right: 16px;
+      background: rgba(14,11,28,.9); border: 1px solid var(--border); color: var(--txt-dim);
+      width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+      font-family: inherit; font-size: 1em; z-index: 260;
+      display: none; align-items: center; justify-content: center; transition: .2s;
+    }
+    #bino-close-btn:hover { color: var(--accent2); border-color: var(--accent2); }
+    #bino-overlay.open ~ #bino-close-btn { display: flex; cursor: pointer; }
+    #bino-ghost {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none; opacity: .06;
+    }
+    #bino-ghost-inner {
+      width: min(60%, 400px); aspect-ratio: 4/5;
+      border: 1px solid rgba(255,255,255,.3);
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 4px; padding: 6px;
+    }
+    .ghost-win { border: 1px solid rgba(255,255,255,.2); aspect-ratio: 2/3; }
     .act-btn {
       background: rgba(25,20,50,.9); border: 1px solid var(--border); color: var(--txt);
-      padding: 5px 12px; cursor: pointer; border-radius: 4px;
-      font-family: inherit; font-size: .78em; transition: .2s;
+      padding: 4px 10px; cursor: pointer; border-radius: 4px;
+      font-family: inherit; font-size: .7em; transition: .2s;
     }
     .act-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
     .act-btn:disabled { opacity: .35; cursor: default; }
-    #obs-sidebar { width: min(320px, 76vw); }
-    /* ── Album modal ─────────────────────────── */
     .alb-entry { padding: 9px 0; border-bottom: 1px solid rgba(244,162,97,.1); }
     .alb-entry:last-child { border-bottom: none; }
-    .alb-icon { float: left; font-size: 1.4em; margin-right: 9px; }
+    .alb-icon { float: left; font-size: 1em; margin-right: 9px; color: var(--accent); font-weight: bold; }
     .alb-title { color: var(--accent); font-size: .88em; margin-bottom: 2px; }
     .alb-desc { color: var(--txt-dim); font-size: .72em; line-height: 1.4; }
     .alb-time { color: var(--accent2); font-size: .62em; margin-top: 3px; }
     .alb-empty { color: var(--txt-dim); font-style: italic; text-align: center; padding: 20px; }
-    /* ── Ad modal ────────────────────────────── */
     #ad-modal .modal { text-align: center; }
     #ad-timer { font-size: 1.4em; color: var(--accent2); margin-bottom: 4px; }
     #ad-body {
@@ -242,115 +350,116 @@
     }
     .start-btn:hover:not(:disabled) { background: #c55030; }
     .start-btn:disabled { opacity: .4; cursor: default; }
-    /* ── Intro modal ─────────────────────────── */
     #intro-modal .modal { text-align: center; max-width: 420px; }
-    #intro-modal .big { font-size: 3em; margin-bottom: 10px; }
     #intro-modal p { font-size: .82em; line-height: 1.6; color: var(--txt-dim); margin-bottom: 10px; }
-    /* ── Scrollbar ───────────────────────────── */
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-    /* ── Responsive ──────────────────────────── */
-    @media (max-width: 420px) {
-      #title { font-size: .7em; }
-      .apt { min-height: 44px; }
-      .apt-icon { font-size: 1.1em; }
+    @media (max-width: 767px) {
+      #main-split { flex-direction: column; }
+      #player-room {
+        width: 100%; max-width: none; min-width: auto;
+        flex-direction: row; min-height: 70px; max-height: 80px;
+        border-right: none; border-bottom: 1px solid rgba(60,50,100,.3);
+      }
+      #room-darkness { display: none; }
+      #windowsill {
+        flex: 1; min-height: 60px; border-top: none;
+        justify-content: flex-start; padding: 6px 10px;
+        overflow-x: auto; flex-wrap: nowrap;
+      }
+      #room-label-mobile {
+        display: flex; align-items: center; padding: 0 10px;
+        font-size: .55em; color: var(--txt-dim); opacity: .5;
+        text-transform: uppercase; white-space: nowrap;
+      }
+      .sill-item { flex-shrink: 0; font-size: .62em; }
+      #bino-circle { width: 240px; height: 240px; }
+      .apt { min-height: 48px; }
       .apt-lbl { font-size: .36em; }
+      #title { font-size: .7em; }
+    }
+    @media (min-width: 768px) {
+      #room-label-mobile { display: none; }
     }
   </style>
 </head>
 <body>
 <div id="app">
-
-  <!-- HEADER -->
   <div id="header">
-    <div id="title">🔭 <span data-i18n="title">Соседи со второго этажа</span></div>
+    <div id="title"><span data-i18n="title">Соседи со второго этажа</span></div>
     <div id="game-time">22:00</div>
     <button id="lang-btn" onclick="toggleLang()">EN</button>
   </div>
-
-  <!-- SCENE -->
-  <div id="scene">
-    <div id="sky"></div>
-    <div id="stars"></div>
-    <div id="rain"></div>
-
-    <div id="building-wrap">
-      <div id="roof"></div>
-      <div id="building"><!-- filled by JS --></div>
-      <div id="ground"></div>
+  <div id="main-split">
+    <div id="player-room">
+      <div id="room-darkness">
+        <div id="room-label" data-i18n="yourRoom">Ваша комната</div>
+      </div>
+      <div id="room-label-mobile" data-i18n="items">Предметы</div>
+      <div id="windowsill"></div>
+    </div>
+    <div id="scene">
+      <div id="sky"></div>
+      <div id="stars"></div>
+      <div id="rain"></div>
+      <div id="building-wrap">
+        <div id="roof"></div>
+        <div id="building"></div>
+        <div id="ground"></div>
+      </div>
     </div>
   </div>
-
-  <!-- CONTROLS -->
   <div id="controls">
-    <div id="inventory"><!-- filled by JS --></div>
+    <div id="controls-info"></div>
     <button class="ctrl-btn" onclick="openAlbum()">
-      📓 <span data-i18n="album">Альбом</span><span class="badge" id="alb-count">0</span>
+      <span data-i18n="album">Альбом</span><span class="badge" id="alb-count">0</span>
     </button>
   </div>
-
 </div>
-
-<!-- NOTIFICATION TOAST -->
 <div id="notif"></div>
-
-<!-- ─── OBSERVATION MODAL ─── -->
-<div class="overlay" id="obs-modal">
-  <div id="bino-wrap">
-    <div id="bino-frame">
-      <div id="bino-icon">🌃</div>
+<div id="bino-overlay">
+  <div id="bino-ghost"><div id="bino-ghost-inner"></div></div>
+  <div id="bino-circle">
+    <div id="bino-content">
+      <div id="bino-sil"></div>
       <div id="bino-name"></div>
       <div id="bino-activity"></div>
       <div id="bino-detail"></div>
     </div>
   </div>
-  <div id="obs-sidebar">
-    <div id="obs-actions"></div>
-    <div id="obs-event"></div>
-    <div style="text-align:right;margin-top:8px;">
-      <button class="act-btn" onclick="closeObs()">✕ <span data-i18n="close">Закрыть</span></button>
-    </div>
+  <div id="bino-panel">
+    <div id="bino-actions"></div>
+    <div id="bino-event"></div>
   </div>
 </div>
-
-<!-- ─── ALBUM MODAL ─── -->
+<button id="bino-close-btn" onclick="closeObs()" aria-label="Close">X</button>
 <div class="overlay" id="alb-modal">
   <div class="modal" style="max-width:540px;">
-    <button class="close-btn" onclick="closeAlbum()">✕</button>
-    <h2>📓 <span data-i18n="obsAlbum">Альбом наблюдений</span></h2>
+    <button class="close-btn" onclick="closeAlbum()" aria-label="Close">X</button>
+    <h2><span data-i18n="obsAlbum">Альбом наблюдений</span></h2>
     <div id="alb-entries"></div>
   </div>
 </div>
-
-<!-- ─── AD MODAL ─── -->
 <div class="overlay" id="ad-modal">
   <div class="modal" style="max-width:360px;">
     <h2 data-i18n="adTitle">Небольшая реклама</h2>
     <div id="ad-timer">5</div>
     <div id="ad-body">
-      <div style="font-size:2em;margin-bottom:8px">🏠</div>
       <div data-i18n="adText">Снимите квартиру своей мечты!</div>
       <div style="margin-top:8px;color:#555;font-size:.75em">advertisement</div>
     </div>
-    <button class="start-btn" id="ad-close-btn" disabled onclick="closeAd()">…</button>
+    <button class="start-btn" id="ad-close-btn" disabled onclick="closeAd()">...</button>
   </div>
 </div>
-
-<!-- ─── INTRO MODAL ─── -->
 <div class="overlay open" id="intro-modal">
   <div class="modal">
-    <div class="big">🔭</div>
     <h2 data-i18n="introTitle">Соседи со второго этажа</h2>
     <p data-i18n="introText">Вы только что переехали в старую панельку и обнаружили, что ваши окна выходят прямиком на фасад соседнего дома. Возьмите бинокль и понаблюдайте за соседями!</p>
     <p data-i18n="introHint">Нажмите на светящееся окно, чтобы понаблюдать. Используйте предметы из инвентаря, чтобы влиять на жизнь соседей.</p>
     <button class="start-btn" onclick="startGame()" data-i18n="introStart">Начать наблюдение</button>
   </div>
 </div>
-
 <script>
-/* ════════════════════════════════════════════
-   i18n
-════════════════════════════════════════════ */
 const STRINGS = {
   ru: {
     title:'Соседи со второго этажа', album:'Альбом', obsAlbum:'Альбом наблюдений',
@@ -360,9 +469,11 @@ const STRINGS = {
     introText:'Вы только что переехали в старую панельку и обнаружили, что ваши окна выходят прямиком на фасад соседнего дома. Возьмите бинокль и понаблюдайте за соседями!',
     introHint:'Нажмите на светящееся окно, чтобы понаблюдать. Используйте предметы из инвентаря, чтобы влиять на жизнь соседей.',
     introStart:'Начать наблюдение',
+    yourRoom:'Ваша комната',
+    items:'Предметы',
     empty:'Темно. Никого нет.',
     aptLabel:'кв.',
-    newDisc:'🔍 Новое открытие! ',
+    newDisc:'Новое открытие! ',
     // characters
     viktor_name:'Виктор Палыч',
     viktor_fix:'чинит старые часы',
@@ -370,37 +481,37 @@ const STRINGS = {
     viktor_tv:'ворчит на телевизор',
     viktor_tea:'пьёт чай из блюдца',
     masha_name:'Маша и Коля',
-    masha_argue:'ссорятся 😤',
-    masha_makeup:'мирятся 💕',
+    masha_argue:'ссорятся',
+    masha_makeup:'мирятся',
     masha_cook:'готовят ужин вместе',
     masha_sleep:'спят',
     dima_name:'Дима-студент',
-    dima_study:'сидит над учебниками 📚',
-    dima_game:'играет вместо учёбы 🎮',
+    dima_study:'сидит над учебниками',
+    dima_game:'играет вместо учёбы',
     dima_sleep:'отрубился за столом',
-    dima_panic:'в панике листает конспекты! 😰',
+    dima_panic:'в панике листает конспекты!',
     nastya_name:'Таинственная Настя',
-    nastya_dance:'танцует в наушниках 🎧',
+    nastya_dance:'танцует в наушниках',
     nastya_curtain:'шторы задёрнуты...',
     nastya_read:'читает при свечах',
-    nastya_window:'выглядывает в окно 👀',
+    nastya_window:'выглядывает в окно',
     sergey_name:'Серёга-таксист',
     sergey_gone:'уехал на смену',
-    sergey_repair:'дома, делает ремонт 🔨',
+    sergey_repair:'дома, делает ремонт',
     sergey_sleep:'спит после ночной',
     sergey_tv:'смотрит телевизор',
     lyudmila_name:'Людмила Ивановна',
     lyudmila_curtain:'шторы не открывает...',
     lyudmila_tv:'мерцает экран телевизора',
-    lyudmila_open:'наконец открыла окно 🪟',
+    lyudmila_open:'наконец открыла окно',
     // items
-    item_candy:'🍬 Конфеты',       item_candy_desc:'Оставить конфеты на подоконнике',
-    item_cable:'📡 Кабель',         item_cable_desc:'Перерезать антенный кабель',
-    item_kite:'🪁 Змей',            item_kite_desc:'Запустить воздушного змея',
-    item_key:'🗝️ Ключ',            item_key_desc:'Подбросить старый ключ',
-    item_photo:'📸 Фото',           item_photo_desc:'Подбросить старое фото',
+    item_candy:'Конфеты',       item_candy_desc:'Оставить конфеты на подоконнике',
+    item_cable:'Кабель',         item_cable_desc:'Перерезать антенный кабель',
+    item_kite:'Змей',            item_kite_desc:'Запустить воздушного змея',
+    item_key:'Ключ',            item_key_desc:'Подбросить старый ключ',
+    item_photo:'Фото',           item_photo_desc:'Подбросить старое фото',
     // events
-    ev_candy:'Настя нашла конфеты на подоконнике! Она думает, что это подарок от тайного поклонника. Её щёки порозовели... 💕',
+    ev_candy:'Настя нашла конфеты на подоконнике! Она думает, что это подарок от тайного поклонника. Её щёки порозовели...',
     ev_cable:'Антенна больше не работает! Серёга остался дома и наконец взялся за долгожданный ремонт. Теперь весь подъезд слышит дрель.',
     ev_kite:'Яркий воздушный змей появился в небе! Несколько соседей прильнули к окнам — хотя бы на минуту все смотрели в одну сторону.',
     ev_key:'Маша нашла под дверью старый ключ. Она решила выяснить, от чего он... Это привело её на чердак, где хранятся чужие тайны.',
@@ -425,44 +536,46 @@ const STRINGS = {
     introText:"You've just moved into an old panel building and discovered your windows look right at the neighbors' facade. Grab your binoculars!",
     introHint:"Click a lit window to observe. Use items from your inventory to influence your neighbors' lives.",
     introStart:'Start Watching',
+    yourRoom:'Your room',
+    items:'Items',
     empty:'Dark. Nobody home.',
     aptLabel:'Apt',
-    newDisc:'🔍 New Discovery! ',
+    newDisc:'New Discovery! ',
     viktor_name:'Viktor Palich',
     viktor_fix:'fixing old clocks',
     viktor_sleep:'napping in armchair',
     viktor_tv:'grumbling at the TV',
     viktor_tea:'drinking tea from saucer',
     masha_name:'Masha & Kolya',
-    masha_argue:'having a fight 😤',
-    masha_makeup:'making up 💕',
+    masha_argue:'having a fight',
+    masha_makeup:'making up',
     masha_cook:'cooking dinner together',
     masha_sleep:'sleeping',
     dima_name:'Dima the Student',
-    dima_study:'studying hard 📚',
-    dima_game:'gaming instead of studying 🎮',
+    dima_study:'studying hard',
+    dima_game:'gaming instead of studying',
     dima_sleep:'passed out at the desk',
-    dima_panic:'panicking over notes! 😰',
+    dima_panic:'panicking over notes!',
     nastya_name:'Mysterious Nastya',
-    nastya_dance:'dancing with headphones 🎧',
+    nastya_dance:'dancing with headphones',
     nastya_curtain:'curtains drawn...',
     nastya_read:'reading by candlelight',
-    nastya_window:'peeking out the window 👀',
+    nastya_window:'peeking out the window',
     sergey_name:'Sergey the Cabbie',
     sergey_gone:'out on shift',
-    sergey_repair:'home, doing repairs 🔨',
+    sergey_repair:'home, doing repairs',
     sergey_sleep:'sleeping after night shift',
     sergey_tv:'watching TV',
     lyudmila_name:'Lyudmila Ivanovna',
     lyudmila_curtain:"curtains never open...",
     lyudmila_tv:'TV screen flickering',
-    lyudmila_open:'finally opened her window 🪟',
-    item_candy:'🍬 Candy',        item_candy_desc:'Leave candy on the windowsill',
-    item_cable:'📡 Cable',         item_cable_desc:'Cut the antenna cable',
-    item_kite:'🪁 Kite',           item_kite_desc:'Launch a kite',
-    item_key:'🗝️ Key',            item_key_desc:'Slip an old key under the door',
-    item_photo:'📸 Photo',          item_photo_desc:'Leave an old photograph',
-    ev_candy:"Nastya found candy on the windowsill! She thinks it's from a secret admirer. Her cheeks turned pink... 💕",
+    lyudmila_open:'finally opened her window',
+    item_candy:'Candy',        item_candy_desc:'Leave candy on the windowsill',
+    item_cable:'Cable',         item_cable_desc:'Cut the antenna cable',
+    item_kite:'Kite',           item_kite_desc:'Launch a kite',
+    item_key:'Key',            item_key_desc:'Slip an old key under the door',
+    item_photo:'Photo',          item_photo_desc:'Leave an old photograph',
+    ev_candy:"Nastya found candy on the windowsill! She thinks it's from a secret admirer. Her cheeks turned pink...",
     ev_cable:"The antenna is dead! Sergey stayed home and finally started that renovation. The whole building can hear the drill.",
     ev_kite:'A bright kite appeared in the sky! Several neighbors pressed faces to the windows — for a moment they all looked the same way.',
     ev_key:"Masha found an old key under the door. She set out to find what it opens... It led her to the attic, full of someone's secrets.",
@@ -480,6 +593,7 @@ const STRINGS = {
   },
 };
 
+
 let lang = 'ru';
 const t = k => (STRINGS[lang][k] ?? STRINGS.ru[k] ?? k);
 
@@ -495,108 +609,163 @@ function toggleLang() {
   applyI18n();
   renderInventory();
   renderBuilding();
-  // Re-render album if open
   if (document.getElementById('alb-modal').classList.contains('open')) renderAlbum();
+  saveState();
 }
 
-/* ════════════════════════════════════════════
-   Game state
-════════════════════════════════════════════ */
-// ── Tunable constants ─────────────────────────
-const GAME_TICK_MS       = 1000;  // 1 real second = 1 game minute
-const AD_INTERVAL_S      = 5 * 60; // show ad every 5 real minutes
-const FX_CANDY_MS        = 25000; // candy effect duration (ms)
-const FX_KITE_MS         = 10000; // kite effect duration (ms)
-const FX_KEY_MS          = 20000; // key effect duration (ms)
-const FX_PHOTO_MS        = 30000; // photo effect duration (ms)
-// ─────────────────────────────────────────────
+/* ---- SVG Silhouette Library ---- */
+const SVG_SIL = {
+  standing: '<svg viewBox="0 0 40 60"><circle cx="20" cy="10" r="6"/><path d="M12 20 Q20 18 28 20 L26 42 H14 Z"/><rect x="14" y="42" width="4" height="14" rx="1"/><rect x="22" y="42" width="4" height="14" rx="1"/></svg>',
+  sitting: '<svg viewBox="0 0 50 60"><circle cx="25" cy="8" r="6"/><path d="M17 18 Q25 16 33 18 L33 34 H17 Z"/><rect x="10" y="34" width="30" height="3" rx="1"/><path d="M17 34 L14 50 H18 L20 37"/><path d="M33 34 L36 50 H32 L30 37"/></svg>',
+  sitting_desk: '<svg viewBox="0 0 50 60"><circle cx="22" cy="8" r="5.5"/><path d="M15 17 Q22 15 29 17 L28 32 H16 Z"/><rect x="8" y="32" width="34" height="3" rx="1"/><path d="M16 32 L13 48 H17 L19 35"/><path d="M28 32 L31 48 H27 L25 35"/><rect x="30" y="22" width="12" height="14" rx="1" opacity=".5"/></svg>',
+  sleeping_desk: '<svg viewBox="0 0 50 60"><circle cx="30" cy="28" r="5.5"/><path d="M22 30 Q30 26 36 30 L34 35 H10 Z"/><rect x="8" y="35" width="34" height="3" rx="1"/><path d="M16 35 L13 50 H17 L19 38"/><path d="M30 35 L33 50 H29 L27 38"/></svg>',
+  two_people_apart: '<svg viewBox="0 0 60 60"><circle cx="14" cy="10" r="5"/><path d="M8 19 Q14 17 20 19 L19 40 H9 Z"/><rect x="9" y="40" width="3" height="12" rx="1"/><rect x="16" y="40" width="3" height="12" rx="1"/><circle cx="46" cy="10" r="5"/><path d="M40 19 Q46 17 52 19 L51 40 H41 Z"/><rect x="41" y="40" width="3" height="12" rx="1"/><rect x="48" y="40" width="3" height="12" rx="1"/></svg>',
+  two_people_close: '<svg viewBox="0 0 50 60"><circle cx="18" cy="10" r="5"/><path d="M12 19 Q18 17 24 19 L23 40 H13 Z"/><rect x="13" y="40" width="3" height="12" rx="1"/><rect x="20" y="40" width="3" height="12" rx="1"/><circle cx="34" cy="10" r="5"/><path d="M28 19 Q34 17 40 19 L39 40 H29 Z"/><rect x="29" y="40" width="3" height="12" rx="1"/><rect x="36" y="40" width="3" height="12" rx="1"/></svg>',
+  cooking: '<svg viewBox="0 0 55 60"><circle cx="16" cy="10" r="5"/><path d="M10 19 Q16 17 22 19 L21 38 H11 Z"/><rect x="11" y="38" width="3" height="14" rx="1"/><rect x="18" y="38" width="3" height="14" rx="1"/><circle cx="36" cy="10" r="5"/><path d="M30 19 Q36 17 42 19 L41 38 H31 Z"/><rect x="31" y="38" width="3" height="14" rx="1"/><rect x="38" y="38" width="3" height="14" rx="1"/><rect x="22" y="42" width="12" height="6" rx="2" opacity=".4"/></svg>',
+  dancing1: '<svg viewBox="0 0 50 60"><circle cx="25" cy="8" r="6"/><path d="M18 18 Q25 16 32 18 L30 40 H20 Z"/><line x1="18" y1="22" x2="6" y2="12" stroke="#2a2a3a" stroke-width="3" stroke-linecap="round"/><line x1="32" y1="22" x2="44" y2="12" stroke="#2a2a3a" stroke-width="3" stroke-linecap="round"/><rect x="20" y="40" width="3" height="14" rx="1"/><rect x="27" y="40" width="3" height="14" rx="1"/></svg>',
+  dancing2: '<svg viewBox="0 0 50 60"><circle cx="25" cy="8" r="6"/><path d="M18 18 Q25 16 32 18 L30 40 H20 Z"/><line x1="18" y1="22" x2="4" y2="20" stroke="#2a2a3a" stroke-width="3" stroke-linecap="round"/><line x1="32" y1="22" x2="46" y2="8" stroke="#2a2a3a" stroke-width="3" stroke-linecap="round"/><path d="M20 40 L16 54 H20" fill="#2a2a3a"/><path d="M30 40 L34 54 H30" fill="#2a2a3a"/></svg>',
+  reading: '<svg viewBox="0 0 50 60"><circle cx="25" cy="12" r="5.5"/><path d="M18 21 Q25 19 32 21 L31 42 H19 Z"/><rect x="19" y="42" width="3" height="12" rx="1"/><rect x="28" y="42" width="3" height="12" rx="1"/><rect x="32" y="26" width="8" height="10" rx="1" opacity=".4"/><circle cx="38" cy="22" r="2" fill="#f4a261" opacity=".3"/></svg>',
+  at_window: '<svg viewBox="0 0 40 60"><circle cx="28" cy="12" r="5.5"/><path d="M22 21 Q28 19 34 21 L33 42 H23 Z"/><rect x="23" y="42" width="3" height="12" rx="1"/><rect x="30" y="42" width="3" height="12" rx="1"/></svg>',
+  at_tv: '<svg viewBox="0 0 50 60"><circle cx="20" cy="12" r="5.5"/><path d="M13 21 Q20 19 27 21 L26 40 H14 Z"/><rect x="14" y="40" width="3" height="14" rx="1"/><rect x="23" y="40" width="3" height="14" rx="1"/><rect x="32" y="18" width="12" height="10" rx="1" opacity=".3"/></svg>',
+  sleeping: '<svg viewBox="0 0 50 60"><circle cx="25" cy="20" r="5.5"/><path d="M18 26 Q25 24 32 26 L31 38 H19 Z"/><rect x="10" y="38" width="30" height="4" rx="1" opacity=".4"/><path d="M19 38 L16 52 H20 L22 41"/><path d="M31 38 L34 52 H30 L28 41"/></svg>',
+  with_tool: '<svg viewBox="0 0 50 60"><circle cx="22" cy="10" r="5.5"/><path d="M15 19 Q22 17 29 19 L28 40 H16 Z"/><rect x="16" y="40" width="3" height="14" rx="1"/><rect x="25" y="40" width="3" height="14" rx="1"/><line x1="29" y1="22" x2="42" y2="10" stroke="#2a2a3a" stroke-width="2.5" stroke-linecap="round"/><rect x="40" y="6" width="4" height="8" rx="1" opacity=".5" transform="rotate(-20 42 10)"/></svg>',
+  tv_curtain: '<svg viewBox="0 0 40 60"><rect x="10" y="20" width="20" height="14" rx="1" opacity=".2"/></svg>',
+  gaming: '<svg viewBox="0 0 50 60"><circle cx="22" cy="8" r="5.5"/><path d="M15 17 Q22 15 29 17 L28 32 H16 Z"/><rect x="8" y="32" width="34" height="3" rx="1"/><path d="M16 32 L13 48 H17 L19 35"/><path d="M28 32 L31 48 H27 L25 35"/><rect x="30" y="20" width="14" height="10" rx="1" opacity=".25"/><circle cx="37" cy="25" r="2" fill="#4a6" opacity=".3"/></svg>',
+};
+
+function getSilSvg(charId, stateKey) {
+  switch (charId) {
+    case 'viktor':
+      if (stateKey === 'fix' || stateKey === 'tea') return SVG_SIL.sitting;
+      if (stateKey === 'sleep') return SVG_SIL.sleeping;
+      if (stateKey === 'tv') return SVG_SIL.at_tv;
+      return SVG_SIL.standing;
+    case 'masha':
+      if (stateKey === 'argue') return SVG_SIL.two_people_apart;
+      if (stateKey === 'makeup') return SVG_SIL.two_people_close;
+      if (stateKey === 'cook') return SVG_SIL.cooking;
+      if (stateKey === 'sleep') return SVG_SIL.sleeping;
+      return SVG_SIL.two_people_close;
+    case 'dima':
+      if (stateKey === 'study' || stateKey === 'panic') return SVG_SIL.sitting_desk;
+      if (stateKey === 'sleep') return SVG_SIL.sleeping_desk;
+      if (stateKey === 'game') return SVG_SIL.gaming;
+      return SVG_SIL.sitting_desk;
+    case 'nastya':
+      if (stateKey === 'dance') return SVG_SIL.dancing1;
+      if (stateKey === 'read') return SVG_SIL.reading;
+      if (stateKey === 'window' || stateKey === 'admirer') return SVG_SIL.at_window;
+      return SVG_SIL.standing;
+    case 'sergey':
+      if (stateKey === 'tv') return SVG_SIL.at_tv;
+      if (stateKey === 'sleep') return SVG_SIL.sleeping;
+      if (stateKey === 'repair') return SVG_SIL.with_tool;
+      return SVG_SIL.standing;
+    case 'lyudmila':
+      if (stateKey === 'tv') return SVG_SIL.tv_curtain;
+      if (stateKey === 'open') return SVG_SIL.at_window;
+      return '';
+    default: return SVG_SIL.standing;
+  }
+}
+
+function getSilAnimClass(charId, stateKey) {
+  if (charId === 'nastya' && stateKey === 'dance') return 'sil-dance';
+  if (stateKey === 'fix' || stateKey === 'tea' || stateKey === 'study' || stateKey === 'panic') return 'sil-breathe';
+  if (stateKey === 'tv') return 'sil-nod';
+  if (stateKey === 'argue') return 'sil-animate';
+  if (stateKey === 'repair') return 'sil-animate';
+  if (stateKey === 'read') return 'sil-breathe';
+  return '';
+}
+
+/* ---- Game state ---- */
+const GAME_TICK_MS       = 1000;
+const AD_INTERVAL_S      = 5 * 60;
+const FX_CANDY_MS        = 25000;
+const FX_KITE_MS         = 10000;
+const FX_KEY_MS          = 20000;
+const FX_PHOTO_MS        = 30000;
 
 let gameHour = 22, gameMin = 0;
 let gameStarted = false;
 let selectedItem = null;
 let selectedIdx = null;
-const spent = {};          // item id → true when used
-const overrides = {};      // char id → state object override
+const spent = {};
+const overrides = {};
 const albumEntries = [];
 let firstObsDone = false;
 let adSecondsLeft = AD_INTERVAL_S;
 
-/* ════════════════════════════════════════════
-   Character definitions
-   Grid: 5 floors × 4 cols  (floor 5 top → floor 1 bottom)
-   idx = (5 - floor) * 4 + col
-════════════════════════════════════════════ */
+/* ---- Character definitions ---- */
 const CHARS = {
-  viktor:   { id:'viktor',   floor:5, col:0, idx:0,  icon:'👴', nk:'viktor_name'   },
-  masha:    { id:'masha',    floor:4, col:1, idx:5,  icon:'👫', nk:'masha_name'    },
-  dima:     { id:'dima',     floor:3, col:2, idx:10, icon:'🎓', nk:'dima_name'     },
-  nastya:   { id:'nastya',   floor:2, col:3, idx:15, icon:'💃', nk:'nastya_name'   },
-  sergey:   { id:'sergey',   floor:1, col:1, idx:17, icon:'🚕', nk:'sergey_name'   },
-  lyudmila: { id:'lyudmila', floor:2, col:0, idx:12, icon:'👵', nk:'lyudmila_name' },
+  viktor:   { id:'viktor',   floor:5, col:0, idx:0,  icon:'', nk:'viktor_name'   },
+  masha:    { id:'masha',    floor:4, col:1, idx:5,  icon:'', nk:'masha_name'    },
+  dima:     { id:'dima',     floor:3, col:2, idx:10, icon:'', nk:'dima_name'     },
+  nastya:   { id:'nastya',   floor:2, col:3, idx:15, icon:'', nk:'nastya_name'   },
+  sergey:   { id:'sergey',   floor:1, col:1, idx:17, icon:'', nk:'sergey_name'   },
+  lyudmila: { id:'lyudmila', floor:2, col:0, idx:12, icon:'', nk:'lyudmila_name' },
 };
 const charByIdx = {};
 Object.values(CHARS).forEach(c => { charByIdx[c.idx] = c; });
 
-// Returns { activity, detail, lit, curtain, stateKey }
 function charState(id) {
   if (overrides[id]) return overrides[id];
   const h = gameHour;
   switch (id) {
     case 'viktor': {
       if (h >= 23 || h < 7)  return { lit:false, curtain:false, stateKey:'sleep',   activity:t('viktor_sleep'), detail:'' };
-      if (h < 9)             return { lit:true,  curtain:false, stateKey:'tea',     activity:t('viktor_tea'),   detail:'☕' };
-      if (h < 22)            return { lit:true,  curtain:false, stateKey:'fix',     activity:t('viktor_fix'),   detail:'⏰🕐🕑' };
-      return                        { lit:true,  curtain:false, stateKey:'tv',      activity:t('viktor_tv'),    detail:'📺' };
+      if (h < 9)             return { lit:true,  curtain:false, stateKey:'tea',     activity:t('viktor_tea'),   detail:'' };
+      if (h < 22)            return { lit:true,  curtain:false, stateKey:'fix',     activity:t('viktor_fix'),   detail:'' };
+      return                        { lit:true,  curtain:false, stateKey:'tv',      activity:t('viktor_tv'),    detail:'' };
     }
     case 'masha': {
       if (h >= 1 && h < 7)   return { lit:false, curtain:false, stateKey:'sleep',   activity:t('masha_sleep'),  detail:'' };
-      if (h >= 7 && h < 9)   return { lit:true,  curtain:false, stateKey:'cook',    activity:t('masha_cook'),   detail:'☕' };
+      if (h >= 7 && h < 9)   return { lit:true,  curtain:false, stateKey:'cook',    activity:t('masha_cook'),   detail:'' };
       if (h >= 19 && h < 23){
         const fight = Math.floor(gameMin / 3) % 2 === 0;
         return { lit:true, curtain:false, stateKey: fight ? 'argue':'makeup',
-          activity: t(fight ? 'masha_argue':'masha_makeup'), detail: fight ? '':'💕' };
+          activity: t(fight ? 'masha_argue':'masha_makeup'), detail: fight ? '':'' };
       }
       return { lit: h >= 17, curtain:false, stateKey:'cook', activity:t('masha_cook'), detail:'' };
     }
     case 'dima': {
       if (h >= 5 && h < 10)  return { lit:false, curtain:false, stateKey:'sleep',   activity:t('dima_sleep'),   detail:'' };
-      if (h >= 10 && h < 18) return { lit:true,  curtain:false, stateKey:'game',    activity:t('dima_game'),    detail:'🎮' };
-      if (h >= 18 && h < 22) return { lit:true,  curtain:false, stateKey:'study',   activity:t('dima_study'),   detail:'📚' };
-      return                        { lit:true,  curtain:false, stateKey:'panic',   activity:t('dima_panic'),   detail:'😰' };
+      if (h >= 10 && h < 18) return { lit:true,  curtain:false, stateKey:'game',    activity:t('dima_game'),    detail:'' };
+      if (h >= 18 && h < 22) return { lit:true,  curtain:false, stateKey:'study',   activity:t('dima_study'),   detail:'' };
+      return                        { lit:true,  curtain:false, stateKey:'panic',   activity:t('dima_panic'),   detail:'' };
     }
     case 'nastya': {
       if (h >= 3 && h < 12)  return { lit:false, curtain:true,  stateKey:'curtain', activity:t('nastya_curtain'), detail:'' };
-      if (h >= 20 && h < 23) return { lit:true,  curtain:false, stateKey:'dance',   activity:t('nastya_dance'),   detail:'🎵' };
+      if (h >= 20 && h < 23) return { lit:true,  curtain:false, stateKey:'dance',   activity:t('nastya_dance'),   detail:'' };
       if (h >= 12 && h < 20) return { lit:false, curtain:true,  stateKey:'curtain', activity:t('nastya_curtain'), detail:'' };
-      return                        { lit:true,  curtain:false, stateKey:'read',    activity:t('nastya_read'),    detail:'🕯️' };
+      return                        { lit:true,  curtain:false, stateKey:'read',    activity:t('nastya_read'),    detail:'' };
     }
     case 'sergey': {
       if (h >= 22 || h < 6)  return { lit:false, curtain:false, stateKey:'sleep',   activity:t('sergey_sleep'), detail:'' };
-      if (h >= 6 && h < 18)  return { lit:false, curtain:false, stateKey:'gone',    activity:t('sergey_gone'),  detail:'🚕' };
-      return                        { lit:true,  curtain:false, stateKey:'tv',      activity:t('sergey_tv'),    detail:'📺' };
+      if (h >= 6 && h < 18)  return { lit:false, curtain:false, stateKey:'gone',    activity:t('sergey_gone'),  detail:'' };
+      return                        { lit:true,  curtain:false, stateKey:'tv',      activity:t('sergey_tv'),    detail:'' };
     }
     case 'lyudmila': {
       const tvOn = (h >= 18 && h < 24) || h < 3;
       return tvOn
-        ? { lit:true,  curtain:true, stateKey:'tv',      activity:t('lyudmila_tv'),      detail:'📺' }
+        ? { lit:true,  curtain:true, stateKey:'tv',      activity:t('lyudmila_tv'),      detail:'' }
         : { lit:false, curtain:true, stateKey:'curtain', activity:t('lyudmila_curtain'), detail:'' };
     }
     default: return { lit:false, curtain:false, stateKey:'empty', activity:t('empty'), detail:'' };
   }
 }
 
-/* ════════════════════════════════════════════
-   Items
-════════════════════════════════════════════ */
+/* ---- Items ---- */
 const ITEMS = [
   {
     id:'candy', ek:'item_candy', dk:'item_candy_desc',
     targets:['nastya'],
     use(cid) {
       if (cid !== 'nastya') return;
-      showObsEvent(t('ev_candy'));
-      addAlbum('admirer','💕');
-      overrides.nastya = { lit:true, curtain:false, stateKey:'admirer', activity:t('nastya_window'), detail:'💕' };
+      showBinoEvent(t('ev_candy'));
+      addAlbum('admirer','');
+      overrides.nastya = { lit:true, curtain:false, stateKey:'admirer', activity:t('nastya_window'), detail:'' };
       setTimeout(() => { delete overrides.nastya; renderBuilding(); }, FX_CANDY_MS);
     },
   },
@@ -605,26 +774,24 @@ const ITEMS = [
     targets:['sergey'],
     use(cid) {
       if (cid !== 'sergey') return;
-      showObsEvent(t('ev_cable'));
-      addAlbum('repair','🔨');
-      overrides.sergey = { lit:true, curtain:false, stateKey:'repair', activity:t('sergey_repair'), detail:'🔨' };
-      // persists (override stays)
+      showBinoEvent(t('ev_cable'));
+      addAlbum('repair','');
+      overrides.sergey = { lit:true, curtain:false, stateKey:'repair', activity:t('sergey_repair'), detail:'' };
     },
   },
   {
     id:'kite', ek:'item_kite', dk:'item_kite_desc',
     targets: Object.keys(CHARS),
     use(_cid) {
-      showObsEvent(t('ev_kite'));
-      addAlbum('kite','🪁');
-      // light up everyone briefly
+      showBinoEvent(t('ev_kite'));
+      addAlbum('kite','');
       Object.values(CHARS).forEach(c => {
         const s = charState(c.id);
-        overrides[c.id] = { ...s, lit:true, detail:'👀' };
+        overrides[c.id] = { ...s, lit:true, detail:'', _kite:true };
       });
       renderBuilding();
       setTimeout(() => {
-        Object.values(CHARS).forEach(c => { if (overrides[c.id] && overrides[c.id].detail === '👀') delete overrides[c.id]; });
+        Object.values(CHARS).forEach(c => { if (overrides[c.id] && overrides[c.id]._kite) delete overrides[c.id]; });
         renderBuilding();
       }, FX_KITE_MS);
     },
@@ -634,9 +801,9 @@ const ITEMS = [
     targets:['masha'],
     use(cid) {
       if (cid !== 'masha') return;
-      showObsEvent(t('ev_key'));
-      addAlbum('attic','🗝️');
-      overrides.masha = { lit:true, curtain:false, stateKey:'makeup', activity:t('masha_makeup'), detail:'💕' };
+      showBinoEvent(t('ev_key'));
+      addAlbum('attic','');
+      overrides.masha = { lit:true, curtain:false, stateKey:'makeup', activity:t('masha_makeup'), detail:'' };
       setTimeout(() => { delete overrides.masha; renderBuilding(); }, FX_KEY_MS);
     },
   },
@@ -645,28 +812,25 @@ const ITEMS = [
     targets:['lyudmila'],
     use(cid) {
       if (cid !== 'lyudmila') return;
-      showObsEvent(t('ev_photo'));
-      addAlbum('window','🪟');
-      overrides.lyudmila = { lit:true, curtain:false, stateKey:'open', activity:t('lyudmila_open'), detail:'🪟' };
+      showBinoEvent(t('ev_photo'));
+      addAlbum('window','');
+      overrides.lyudmila = { lit:true, curtain:false, stateKey:'open', activity:t('lyudmila_open'), detail:'' };
       setTimeout(() => { delete overrides.lyudmila; renderBuilding(); }, FX_PHOTO_MS);
     },
   },
 ];
 
-/* ════════════════════════════════════════════
-   Album
-════════════════════════════════════════════ */
+/* ---- Album ---- */
 function addAlbum(key, icon) {
   if (albumEntries.find(e => e.key === key)) return;
   const title = t('alb_' + key);
   albumEntries.push({ key, icon, title, desc: t('alb_' + key + '_d'), time: fmtTime() });
   document.getElementById('alb-count').textContent = albumEntries.length;
   showNotif(t('newDisc') + title);
+  saveState();
 }
 
-/* ════════════════════════════════════════════
-   Building rendering
-════════════════════════════════════════════ */
+/* ---- Building rendering ---- */
 function renderBuilding() {
   const bld = document.getElementById('building');
   bld.innerHTML = '';
@@ -676,18 +840,31 @@ function renderBuilding() {
       const apt = document.createElement('div');
       apt.className = 'apt';
       apt.dataset.idx = idx;
-
       const char = charByIdx[idx];
       if (char) {
         const s = charState(char.id);
         if (s.lit) apt.classList.add('lit');
         if (s.curtain) apt.classList.add('curtain');
+        const isTv = (char.id === 'viktor' && s.stateKey === 'tv') ||
+                     (char.id === 'sergey' && s.stateKey === 'tv') ||
+                     (char.id === 'lyudmila' && s.stateKey === 'tv');
+        if (isTv) {
+          apt.classList.add('tv-on');
+          const glow = document.createElement('div');
+          glow.className = 'tv-glow';
+          apt.appendChild(glow);
+        }
         if (s.lit || s.curtain) {
-          const ico = document.createElement('div');
-          ico.className = 'apt-icon';
-          ico.textContent = char.icon;
-          apt.appendChild(ico);
-          if (s.lit) {
+          const silSvg = getSilSvg(char.id, s.stateKey);
+          if (silSvg) {
+            const wrap = document.createElement('div');
+            wrap.className = 'sil-wrap';
+            const animClass = getSilAnimClass(char.id, s.stateKey);
+            if (animClass) wrap.classList.add(animClass);
+            wrap.innerHTML = silSvg;
+            apt.appendChild(wrap);
+          }
+          if (s.lit && !s.curtain) {
             const lbl = document.createElement('div');
             lbl.className = 'apt-lbl';
             lbl.textContent = s.activity;
@@ -695,12 +872,13 @@ function renderBuilding() {
           }
         }
       } else {
-        // Generic neighbour — pseudo-random light
         const seed = idx * 137 + Math.floor(gameHour / 2);
         const isNight = gameHour >= 18 || gameHour < 6;
         if (isNight && seed % 5 !== 0) apt.classList.add(seed % 7 === 0 ? 'dim' : 'lit');
+        const refl = document.createElement('div');
+        refl.className = 'win-reflection';
+        apt.appendChild(refl);
       }
-
       if (idx === selectedIdx) apt.classList.add('sel');
       apt.addEventListener('click', () => onAptClick(idx, char));
       bld.appendChild(apt);
@@ -708,21 +886,30 @@ function renderBuilding() {
   }
 }
 
-/* ════════════════════════════════════════════
-   Inventory
-════════════════════════════════════════════ */
+/* ---- Inventory (windowsill) ---- */
 function renderInventory() {
-  const inv = document.getElementById('inventory');
-  inv.innerHTML = '';
+  const sill = document.getElementById('windowsill');
+  sill.innerHTML = '';
   ITEMS.forEach(item => {
     const s = document.createElement('div');
     const isSpent = !!spent[item.id];
     const isActive = selectedItem && selectedItem.id === item.id;
-    s.className = 'item-slot' + (isSpent ? ' spent' : '') + (isActive ? ' active' : '');
+    s.className = 'sill-item' + (isSpent ? ' spent' : '') + (isActive ? ' active' : '');
     s.title = t(item.dk);
     s.textContent = t(item.ek);
-    if (!isSpent) s.addEventListener('click', () => toggleItem(item));
-    inv.appendChild(s);
+    s.dataset.itemId = item.id;
+    if (!isSpent) {
+      s.setAttribute('draggable', 'true');
+      s.addEventListener('dragstart', (e) => {
+        selectedItem = item;
+        s.classList.add('dragging');
+        e.dataTransfer.setData('text/plain', item.id);
+        renderInventory();
+      });
+      s.addEventListener('dragend', () => { s.classList.remove('dragging'); });
+      s.addEventListener('click', () => toggleItem(item));
+    }
+    sill.appendChild(s);
   });
 }
 
@@ -733,12 +920,9 @@ function toggleItem(item) {
   if (selectedItem) showNotif(t(selectedItem.dk));
 }
 
-/* ════════════════════════════════════════════
-   Apartment click
-════════════════════════════════════════════ */
+/* ---- Apartment click ---- */
 function onAptClick(idx, char) {
   selectedIdx = idx;
-  // If item selected and target matches → use immediately
   if (selectedItem && char && selectedItem.targets.includes(char.id) && !spent[selectedItem.id]) {
     spent[selectedItem.id] = true;
     selectedItem.use(char.id);
@@ -746,43 +930,46 @@ function onAptClick(idx, char) {
     renderInventory();
     renderBuilding();
     openObs(idx, char);
+    saveState();
     return;
   }
   openObs(idx, char);
   renderBuilding();
 }
 
-/* ════════════════════════════════════════════
-   Observation modal
-════════════════════════════════════════════ */
-function openObs(idx, char) {
-  document.getElementById('obs-modal').classList.add('open');
-  document.getElementById('obs-event').style.display = 'none';
-  const frame = document.getElementById('bino-frame');
-  const actions = document.getElementById('obs-actions');
-  actions.innerHTML = '';
+/* ---- Binocular observation ---- */
+let binoChar = null;
+let binoIdx = null;
 
+function openObs(idx, char) {
+  binoChar = char;
+  binoIdx = idx;
+  const overlay = document.getElementById('bino-overlay');
+  overlay.classList.add('open');
+  document.getElementById('bino-close-btn').style.display = 'flex';
+  document.getElementById('bino-event').style.display = 'none';
+  const content = document.getElementById('bino-content');
+  const silEl = document.getElementById('bino-sil');
+  const actions = document.getElementById('bino-actions');
+  actions.innerHTML = '';
   if (char) {
     const s = charState(char.id);
-    frame.className = s.lit ? 'lit' : '';
-    document.getElementById('bino-icon').textContent = s.lit ? char.icon : '🌑';
+    content.className = s.lit ? 'lit' : '';
+    silEl.innerHTML = getSilSvg(char.id, s.stateKey) || '';
     document.getElementById('bino-name').textContent = t(char.nk);
     document.getElementById('bino-activity').textContent = s.activity;
     document.getElementById('bino-detail').textContent = s.detail || '';
-
-    // Auto-discoveries
-    if (!firstObsDone) { firstObsDone = true; addAlbum('first','🔭'); }
-    if (char.id === 'viktor' && s.lit)              addAlbum('viktor','⏰');
-    if (char.id === 'nastya' && s.stateKey === 'dance') addAlbum('dance','💃');
-    if (char.id === 'dima'   && s.lit)              addAlbum('student','🎓');
-    if (char.id === 'masha'  && s.stateKey === 'argue') addAlbum('couple','💥');
-
-    // Item buttons
+    if (!firstObsDone) { firstObsDone = true; addAlbum('first',''); }
+    if (char.id === 'viktor' && s.lit)                 addAlbum('viktor','');
+    if (char.id === 'nastya' && s.stateKey === 'dance') addAlbum('dance','');
+    if (char.id === 'dima'   && s.lit)                 addAlbum('student','');
+    if (char.id === 'masha'  && s.stateKey === 'argue') addAlbum('couple','');
     ITEMS.filter(it => it.targets.includes(char.id) && !spent[it.id]).forEach(item => {
       const btn = document.createElement('button');
       btn.className = 'act-btn';
       btn.textContent = t(item.ek);
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
         if (spent[item.id]) return;
         spent[item.id] = true;
         selectedItem = null;
@@ -790,40 +977,71 @@ function openObs(idx, char) {
         renderInventory();
         renderBuilding();
         btn.disabled = true;
-        // Refresh obs content
+        saveState();
         const ns = charState(char.id);
-        frame.className = ns.lit ? 'lit' : '';
-        document.getElementById('bino-icon').textContent = ns.lit ? char.icon : '🌑';
+        content.className = ns.lit ? 'lit' : '';
+        silEl.innerHTML = getSilSvg(char.id, ns.stateKey) || '';
         document.getElementById('bino-activity').textContent = ns.activity;
         document.getElementById('bino-detail').textContent = ns.detail || '';
       });
       actions.appendChild(btn);
     });
-
   } else {
-    frame.className = '';
-    document.getElementById('bino-icon').textContent = '🌃';
+    content.className = '';
+    silEl.innerHTML = '';
     document.getElementById('bino-name').textContent = t('aptLabel') + ' ' + (idx + 1);
     document.getElementById('bino-activity').textContent = t('empty');
     document.getElementById('bino-detail').textContent = '';
   }
+  const circle = document.getElementById('bino-circle');
+  circle.style.left = '50%';
+  circle.style.top = '50%';
 }
 
-function showObsEvent(txt) {
-  const el = document.getElementById('obs-event');
+function showBinoEvent(txt) {
+  const el = document.getElementById('bino-event');
   el.textContent = txt;
   el.style.display = 'block';
 }
 
 function closeObs() {
-  document.getElementById('obs-modal').classList.remove('open');
+  document.getElementById('bino-overlay').classList.remove('open');
+  document.getElementById('bino-close-btn').style.display = 'none';
   selectedIdx = null;
+  binoChar = null;
+  binoIdx = null;
   renderBuilding();
 }
 
-/* ════════════════════════════════════════════
-   Album modal
-════════════════════════════════════════════ */
+(function setupBinoTracking() {
+  const overlay = document.getElementById('bino-overlay');
+  const circle = document.getElementById('bino-circle');
+  function moveCircle(x, y) { circle.style.left = x + 'px'; circle.style.top = y + 'px'; }
+  document.addEventListener('mousemove', (e) => {
+    if (!overlay.classList.contains('open')) return;
+    moveCircle(e.clientX, e.clientY);
+  });
+  document.addEventListener('touchmove', (e) => {
+    if (!overlay.classList.contains('open')) return;
+    if (e.touches.length > 0) moveCircle(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+  document.addEventListener('touchstart', (e) => {
+    if (!overlay.classList.contains('open')) return;
+    if (e.touches.length > 0) moveCircle(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeObs(); });
+})();
+
+(function buildBinoGhost() {
+  const ghost = document.getElementById('bino-ghost-inner');
+  for (let i = 0; i < 20; i++) {
+    const w = document.createElement('div');
+    w.className = 'ghost-win';
+    ghost.appendChild(w);
+  }
+})();
+
+/* ---- Album modal ---- */
 function openAlbum() {
   document.getElementById('alb-modal').classList.add('open');
   renderAlbum();
@@ -835,24 +1053,20 @@ function renderAlbum() {
     c.innerHTML = '<div class="alb-empty">' + t('introHint') + '</div>';
     return;
   }
-  c.innerHTML = albumEntries.map(e =>
-    `<div class="alb-entry">
-      <span class="alb-icon">${e.icon}</span>
-      <div class="alb-title">${e.title}</div>
-      <div class="alb-desc">${e.desc}</div>
-      <div class="alb-time">${e.time}</div>
-    </div>`
+  c.innerHTML = albumEntries.map((e, i) =>
+    '<div class="alb-entry">' +
+      '<span class="alb-icon">#' + (i + 1) + '</span>' +
+      '<div class="alb-title">' + e.title + '</div>' +
+      '<div class="alb-desc">' + e.desc + '</div>' +
+      '<div class="alb-time">' + e.time + '</div>' +
+    '</div>'
   ).join('');
 }
 
-/* ════════════════════════════════════════════
-   Ad system (Yandex Games SDK + fallback)
-════════════════════════════════════════════ */
+/* ---- Ad system ---- */
 let ysdk = null;
-
-// Try to load Yandex SDK; silently fall back if not on the platform
 (function loadYaSDK() {
-  if (document.querySelector('script[src="/sdk.js"]')) return; // guard against double-load
+  if (document.querySelector('script[src="/sdk.js"]')) return;
   const script = document.createElement('script');
   script.src = '/sdk.js';
   script.onload = () => {
@@ -903,9 +1117,7 @@ function showFallbackAd() {
 
 function closeAd() { document.getElementById('ad-modal').classList.remove('open'); }
 
-/* ════════════════════════════════════════════
-   Time & sky
-════════════════════════════════════════════ */
+/* ---- Time & sky ---- */
 function fmtTime() {
   return String(gameHour).padStart(2,'0') + ':' + String(gameMin).padStart(2,'0');
 }
@@ -923,24 +1135,21 @@ function updateSky() {
     sky.style.background = 'linear-gradient(180deg, #1a1040, #4a2a2a 60%, #c05830)';
     stars.style.opacity = '.5';
   } else {
-    sky.style.background = 'linear-gradient(180deg, #0f0e17, #1a1535 65%, #2a1f4a)';
+    sky.style.background = 'linear-gradient(180deg, #0a0a14, #1a1535 65%, #2a1f4a)';
     stars.style.opacity = '1';
   }
 }
 
 let tickIv = null, adTickIv = null;
-
 function startGameLoop() {
   clearInterval(tickIv);
   tickIv = setInterval(() => {
     gameMin++;
     if (gameMin >= 60) { gameMin = 0; gameHour = (gameHour + 1) % 24; renderBuilding(); updateSky(); }
     document.getElementById('game-time').textContent = fmtTime();
-    // Rain: on at 19:00, off at 21:00
     if (gameHour === 19 && gameMin === 0) setRain(true);
     if (gameHour === 21 && gameMin === 0) setRain(false);
-  }, GAME_TICK_MS); // 1 real s = 1 game min
-
+  }, GAME_TICK_MS);
   clearInterval(adTickIv);
   adTickIv = setInterval(() => {
     adSecondsLeft--;
@@ -948,9 +1157,7 @@ function startGameLoop() {
   }, GAME_TICK_MS);
 }
 
-/* ════════════════════════════════════════════
-   Rain
-════════════════════════════════════════════ */
+/* ---- Rain ---- */
 function setRain(on) {
   const rain = document.getElementById('rain');
   if (on && !rain.classList.contains('on')) {
@@ -965,29 +1172,25 @@ function setRain(on) {
       rain.appendChild(d);
     }
     rain.classList.add('on');
-  } else {
+  } else if (!on) {
     rain.classList.remove('on');
   }
 }
 
-/* ════════════════════════════════════════════
-   Stars
-════════════════════════════════════════════ */
+/* ---- Stars ---- */
 function createStars() {
   const c = document.getElementById('stars');
   for (let i = 0; i < 90; i++) {
     const s = document.createElement('div');
     s.className = 'star';
     const sz = Math.random() * 2 + 1;
-    s.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*80}%;` +
-      `animation-delay:${Math.random()*2}s;animation-duration:${Math.random()*2+1.5}s`;
+    s.style.cssText = 'width:' + sz + 'px;height:' + sz + 'px;left:' + (Math.random()*100) + '%;top:' + (Math.random()*80) + '%;' +
+      'animation-delay:' + (Math.random()*2) + 's;animation-duration:' + (Math.random()*2+1.5) + 's';
     c.appendChild(s);
   }
 }
 
-/* ════════════════════════════════════════════
-   Notification
-════════════════════════════════════════════ */
+/* ---- Notification ---- */
 let notifTmr = null;
 function showNotif(txt) {
   const el = document.getElementById('notif');
@@ -997,9 +1200,86 @@ function showNotif(txt) {
   notifTmr = setTimeout(() => el.classList.remove('show'), 3200);
 }
 
-/* ════════════════════════════════════════════
-   Start
-════════════════════════════════════════════ */
+/* ---- Silhouette pose changes ---- */
+let silTimer = null;
+let dancePhase = false;
+function startSilhouetteAnimations() {
+  function tick() {
+    dancePhase = !dancePhase;
+    document.querySelectorAll('.sil-wrap').forEach(wrap => {
+      if (wrap.classList.contains('sil-dance') || wrap.classList.contains('sil-dance2')) {
+        wrap.classList.toggle('sil-dance', !dancePhase);
+        wrap.classList.toggle('sil-dance2', dancePhase);
+      }
+    });
+    silTimer = setTimeout(tick, 3000 + Math.random() * 4000);
+  }
+  tick();
+}
+
+/* ---- localStorage persistence ---- */
+const SAVE_KEY = 'sosedi_save';
+function saveState() {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      lang: lang,
+      spent: Object.keys(spent).filter(k => spent[k]),
+      album: albumEntries.map(e => ({ key: e.key, time: e.time })),
+      firstObsDone: firstObsDone,
+    }));
+  } catch(e) { console.warn('Failed to save state:', e); }
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.lang && (data.lang === 'en' || data.lang === 'ru')) {
+      lang = data.lang;
+      document.getElementById('lang-btn').textContent = lang === 'ru' ? 'EN' : 'RU';
+      document.documentElement.lang = lang;
+    }
+    if (Array.isArray(data.spent)) data.spent.forEach(id => { spent[id] = true; });
+    if (data.firstObsDone) firstObsDone = true;
+    if (Array.isArray(data.album)) {
+      data.album.forEach(entry => {
+        const key = entry.key;
+        const time = entry.time || '--:--';
+        if (!albumEntries.find(e => e.key === key)) {
+          albumEntries.push({ key, icon:'', title: t('alb_' + key), desc: t('alb_' + key + '_d'), time: time });
+        }
+      });
+      document.getElementById('alb-count').textContent = albumEntries.length;
+    }
+  } catch(e) { console.warn('Failed to load state:', e); }
+}
+
+/* ---- Drag & drop on building ---- */
+(function setupDragDrop() {
+  const bld = document.getElementById('building');
+  bld.addEventListener('dragover', (e) => { e.preventDefault(); });
+  bld.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const itemId = e.dataTransfer.getData('text/plain');
+    const item = ITEMS.find(it => it.id === itemId);
+    if (!item || spent[item.id]) return;
+    const target = e.target.closest('.apt');
+    if (!target) return;
+    const idx = parseInt(target.dataset.idx);
+    const char = charByIdx[idx];
+    if (char && item.targets.includes(char.id)) {
+      spent[item.id] = true;
+      selectedItem = null;
+      item.use(char.id);
+      renderInventory();
+      renderBuilding();
+      openObs(idx, char);
+      saveState();
+    }
+  });
+})();
+
+/* ---- Start ---- */
 function startGame() {
   gameStarted = true;
   document.getElementById('intro-modal').classList.remove('open');
@@ -1007,9 +1287,12 @@ function startGame() {
   renderInventory();
   updateSky();
   startGameLoop();
+  startSilhouetteAnimations();
+  saveState();
 }
 
-// Pre-render before start
+loadState();
+applyI18n();
 createStars();
 renderBuilding();
 renderInventory();
