@@ -425,10 +425,10 @@
     </div>
   </div>
 </div>
-<button id="bino-close-btn" onclick="closeObs()">X</button>
+<button id="bino-close-btn" onclick="closeObs()" aria-label="Close">X</button>
 <div class="overlay" id="alb-modal">
   <div class="modal" style="max-width:540px;">
-    <button class="close-btn" onclick="closeAlbum()">X</button>
+    <button class="close-btn" onclick="closeAlbum()" aria-label="Close">X</button>
     <h2><span data-i18n="obsAlbum">Альбом наблюдений</span></h2>
     <div id="alb-entries"></div>
   </div>
@@ -645,7 +645,7 @@ function getSilSvg(charId, stateKey) {
       if (stateKey === 'game') return SVG_SIL.gaming;
       return SVG_SIL.sitting_desk;
     case 'nastya':
-      if (stateKey === 'dance') return (Math.random() > 0.5) ? SVG_SIL.dancing1 : SVG_SIL.dancing2;
+      if (stateKey === 'dance') return (Date.now() % 6000 < 3000) ? SVG_SIL.dancing1 : SVG_SIL.dancing2;
       if (stateKey === 'read') return SVG_SIL.reading;
       if (stateKey === 'window' || stateKey === 'admirer') return SVG_SIL.at_window;
       return SVG_SIL.standing;
@@ -1222,7 +1222,7 @@ function saveState() {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       lang: lang,
       spent: Object.keys(spent).filter(k => spent[k]),
-      album: albumEntries.map(e => e.key),
+      album: albumEntries.map(e => ({ key: e.key, time: e.time })),
       firstObsDone: firstObsDone,
     }));
   } catch(e) {}
@@ -1240,9 +1240,11 @@ function loadState() {
     if (Array.isArray(data.spent)) data.spent.forEach(id => { spent[id] = true; });
     if (data.firstObsDone) firstObsDone = true;
     if (Array.isArray(data.album)) {
-      data.album.forEach(key => {
+      data.album.forEach(entry => {
+        const key = typeof entry === 'string' ? entry : entry.key;
+        const time = (typeof entry === 'object' && entry.time) ? entry.time : '--:--';
         if (!albumEntries.find(e => e.key === key)) {
-          albumEntries.push({ key, icon:'', title: t('alb_' + key), desc: t('alb_' + key + '_d'), time:'--:--' });
+          albumEntries.push({ key, icon:'', title: t('alb_' + key), desc: t('alb_' + key + '_d'), time: time });
         }
       });
       document.getElementById('alb-count').textContent = albumEntries.length;
