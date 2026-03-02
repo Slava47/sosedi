@@ -288,14 +288,19 @@
     #bino-detail { color: var(--txt-dim); font-size: .62em; margin-top: 4px; font-style: italic; }
     #bino-actions {
       display: flex; gap: 5px; flex-wrap: wrap; justify-content: center;
-      margin-top: 8px; pointer-events: auto;
     }
     #bino-event {
       margin-top: 6px; padding: 6px 8px;
       border-left: 3px solid var(--accent);
       background: rgba(233,196,106,.07); color: var(--txt);
-      font-size: .65em; line-height: 1.4; border-radius: 0 4px 4px 0;
-      display: none; max-width: 240px; text-align: left;
+      font-size: .75em; line-height: 1.4; border-radius: 0 4px 4px 0;
+      display: none; max-width: 360px; text-align: left;
+    }
+    #bino-panel {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      z-index: 260; display: flex; flex-direction: column; align-items: center; gap: 8px;
+      padding: 10px 18px; background: rgba(14,11,28,.92); border: 1px solid var(--border);
+      border-radius: 8px; max-width: 90vw;
     }
     #bino-close-btn {
       position: fixed; top: 16px; right: 16px;
@@ -420,9 +425,11 @@
       <div id="bino-name"></div>
       <div id="bino-activity"></div>
       <div id="bino-detail"></div>
-      <div id="bino-actions"></div>
-      <div id="bino-event"></div>
     </div>
+  </div>
+  <div id="bino-panel">
+    <div id="bino-actions"></div>
+    <div id="bino-event"></div>
   </div>
 </div>
 <button id="bino-close-btn" onclick="closeObs()" aria-label="Close">X</button>
@@ -1009,23 +1016,19 @@ function closeObs() {
 (function setupBinoTracking() {
   const overlay = document.getElementById('bino-overlay');
   const circle = document.getElementById('bino-circle');
-  overlay.addEventListener('mousemove', (e) => {
-    circle.style.left = e.clientX + 'px';
-    circle.style.top = e.clientY + 'px';
+  function moveCircle(x, y) { circle.style.left = x + 'px'; circle.style.top = y + 'px'; }
+  document.addEventListener('mousemove', (e) => {
+    if (!overlay.classList.contains('open')) return;
+    moveCircle(e.clientX, e.clientY);
   });
-  overlay.addEventListener('touchmove', (e) => {
-    if (e.touches.length > 0) {
-      circle.style.left = e.touches[0].clientX + 'px';
-      circle.style.top = e.touches[0].clientY + 'px';
-    }
-    e.preventDefault();
-  }, { passive: false });
-  overlay.addEventListener('touchstart', (e) => {
-    if (e.touches.length > 0) {
-      circle.style.left = e.touches[0].clientX + 'px';
-      circle.style.top = e.touches[0].clientY + 'px';
-    }
-  });
+  document.addEventListener('touchmove', (e) => {
+    if (!overlay.classList.contains('open')) return;
+    if (e.touches.length > 0) moveCircle(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+  document.addEventListener('touchstart', (e) => {
+    if (!overlay.classList.contains('open')) return;
+    if (e.touches.length > 0) moveCircle(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
   overlay.addEventListener('click', (e) => { if (e.target === overlay) closeObs(); });
 })();
 
