@@ -263,7 +263,7 @@
 
   <!-- HEADER -->
   <div id="header">
-    <div id="title">🔭 <span data-i18n="title">Соседи со второго этажа</span></div>
+    <div id="title"><span data-i18n="title">Соседи со второго этажа</span></div>
     <div id="game-time">22:00</div>
     <button id="lang-btn" onclick="toggleLang()">EN</button>
   </div>
@@ -285,7 +285,7 @@
   <div id="controls">
     <div id="inventory"><!-- filled by JS --></div>
     <button class="ctrl-btn" onclick="openAlbum()">
-      📓 <span data-i18n="album">Альбом</span><span class="badge" id="alb-count">0</span>
+      <span data-i18n="album">Альбом</span><span class="badge" id="alb-count">0</span>
     </button>
   </div>
 
@@ -298,7 +298,7 @@
 <div class="overlay" id="obs-modal">
   <div id="bino-wrap">
     <div id="bino-frame">
-      <div id="bino-icon">🌃</div>
+      <div id="bino-icon"></div>
       <div id="bino-name"></div>
       <div id="bino-activity"></div>
       <div id="bino-detail"></div>
@@ -317,7 +317,7 @@
 <div class="overlay" id="alb-modal">
   <div class="modal" style="max-width:540px;">
     <button class="close-btn" onclick="closeAlbum()">✕</button>
-    <h2>📓 <span data-i18n="obsAlbum">Альбом наблюдений</span></h2>
+    <h2><span data-i18n="obsAlbum">Альбом наблюдений</span></h2>
     <div id="alb-entries"></div>
   </div>
 </div>
@@ -328,7 +328,7 @@
     <h2 data-i18n="adTitle">Небольшая реклама</h2>
     <div id="ad-timer">5</div>
     <div id="ad-body">
-      <div style="font-size:2em;margin-bottom:8px">🏠</div>
+      <div style="font-size:2em;margin-bottom:8px"></div>
       <div data-i18n="adText">Снимите квартиру своей мечты!</div>
       <div style="margin-top:8px;color:#555;font-size:.75em">advertisement</div>
     </div>
@@ -339,7 +339,7 @@
 <!-- ─── INTRO MODAL ─── -->
 <div class="overlay open" id="intro-modal">
   <div class="modal">
-    <div class="big">🔭</div>
+    <div class="big"></div>
     <h2 data-i18n="introTitle">Соседи со второго этажа</h2>
     <p data-i18n="introText">Вы только что переехали в старую панельку и обнаружили, что ваши окна выходят прямиком на фасад соседнего дома. Возьмите бинокль и понаблюдайте за соседями!</p>
     <p data-i18n="introHint">Нажмите на светящееся окно, чтобы понаблюдать. Используйте предметы из инвентаря, чтобы влиять на жизнь соседей.</p>
@@ -362,7 +362,7 @@ const STRINGS = {
     introStart:'Начать наблюдение',
     empty:'Темно. Никого нет.',
     aptLabel:'кв.',
-    newDisc:'🔍 Новое открытие! ',
+    newDisc:'Новое открытие! ',
     // characters
     viktor_name:'Виктор Палыч',
     viktor_fix:'чинит старые часы',
@@ -370,37 +370,37 @@ const STRINGS = {
     viktor_tv:'ворчит на телевизор',
     viktor_tea:'пьёт чай из блюдца',
     masha_name:'Маша и Коля',
-    masha_argue:'ссорятся 😤',
-    masha_makeup:'мирятся 💕',
+    masha_argue:'ссорятся',
+    masha_makeup:'мирятся',
     masha_cook:'готовят ужин вместе',
     masha_sleep:'спят',
     dima_name:'Дима-студент',
-    dima_study:'сидит над учебниками 📚',
-    dima_game:'играет вместо учёбы 🎮',
+    dima_study:'сидит над учебниками',
+    dima_game:'играет вместо учёбы',
     dima_sleep:'отрубился за столом',
-    dima_panic:'в панике листает конспекты! 😰',
+    dima_panic:'в панике листает конспекты!',
     nastya_name:'Таинственная Настя',
-    nastya_dance:'танцует в наушниках 🎧',
+    nastya_dance:'танцует в наушниках',
     nastya_curtain:'шторы задёрнуты...',
     nastya_read:'читает при свечах',
-    nastya_window:'выглядывает в окно 👀',
+    nastya_window:'выглядывает в окно',
     sergey_name:'Серёга-таксист',
     sergey_gone:'уехал на смену',
-    sergey_repair:'дома, делает ремонт 🔨',
+    sergey_repair:'дома, делает ремонт',
     sergey_sleep:'спит после ночной',
     sergey_tv:'смотрит телевизор',
     lyudmila_name:'Людмила Ивановна',
     lyudmila_curtain:'шторы не открывает...',
     lyudmila_tv:'мерцает экран телевизора',
-    lyudmila_open:'наконец открыла окно 🪟',
+    lyudmila_open:'наконец открыла окно',
     // items
-    item_candy:'🍬 Конфеты',       item_candy_desc:'Оставить конфеты на подоконнике',
-    item_cable:'📡 Кабель',         item_cable_desc:'Перерезать антенный кабель',
-    item_kite:'🪁 Змей',            item_kite_desc:'Запустить воздушного змея',
-    item_key:'🗝️ Ключ',            item_key_desc:'Подбросить старый ключ',
-    item_photo:'📸 Фото',           item_photo_desc:'Подбросить старое фото',
+    item_candy:'Конфеты',       item_candy_desc:'Оставить конфеты на подоконнике',
+    item_cable:'Кабель',         item_cable_desc:'Перерезать антенный кабель',
+    item_kite:'Змей',            item_kite_desc:'Запустить воздушного змея',
+    item_key:'Ключ',            item_key_desc:'Подбросить старый ключ',
+    item_photo:'Фото',           item_photo_desc:'Подбросить старое фото',
     // events
-    ev_candy:'Настя нашла конфеты на подоконнике! Она думает, что это подарок от тайного поклонника. Её щёки порозовели... 💕',
+    ev_candy:'Настя нашла конфеты на подоконнике! Она думает, что это подарок от тайного поклонника. Её щёки порозовели...',
     ev_cable:'Антенна больше не работает! Серёга остался дома и наконец взялся за долгожданный ремонт. Теперь весь подъезд слышит дрель.',
     ev_kite:'Яркий воздушный змей появился в небе! Несколько соседей прильнули к окнам — хотя бы на минуту все смотрели в одну сторону.',
     ev_key:'Маша нашла под дверью старый ключ. Она решила выяснить, от чего он... Это привело её на чердак, где хранятся чужие тайны.',
@@ -427,42 +427,42 @@ const STRINGS = {
     introStart:'Start Watching',
     empty:'Dark. Nobody home.',
     aptLabel:'Apt',
-    newDisc:'🔍 New Discovery! ',
+    newDisc:'New Discovery! ',
     viktor_name:'Viktor Palich',
     viktor_fix:'fixing old clocks',
     viktor_sleep:'napping in armchair',
     viktor_tv:'grumbling at the TV',
     viktor_tea:'drinking tea from saucer',
     masha_name:'Masha & Kolya',
-    masha_argue:'having a fight 😤',
-    masha_makeup:'making up 💕',
+    masha_argue:'having a fight',
+    masha_makeup:'making up',
     masha_cook:'cooking dinner together',
     masha_sleep:'sleeping',
     dima_name:'Dima the Student',
-    dima_study:'studying hard 📚',
-    dima_game:'gaming instead of studying 🎮',
+    dima_study:'studying hard',
+    dima_game:'gaming instead of studying',
     dima_sleep:'passed out at the desk',
-    dima_panic:'panicking over notes! 😰',
+    dima_panic:'panicking over notes!',
     nastya_name:'Mysterious Nastya',
-    nastya_dance:'dancing with headphones 🎧',
+    nastya_dance:'dancing with headphones',
     nastya_curtain:'curtains drawn...',
     nastya_read:'reading by candlelight',
-    nastya_window:'peeking out the window 👀',
+    nastya_window:'peeking out the window',
     sergey_name:'Sergey the Cabbie',
     sergey_gone:'out on shift',
-    sergey_repair:'home, doing repairs 🔨',
+    sergey_repair:'home, doing repairs',
     sergey_sleep:'sleeping after night shift',
     sergey_tv:'watching TV',
     lyudmila_name:'Lyudmila Ivanovna',
     lyudmila_curtain:"curtains never open...",
     lyudmila_tv:'TV screen flickering',
-    lyudmila_open:'finally opened her window 🪟',
-    item_candy:'🍬 Candy',        item_candy_desc:'Leave candy on the windowsill',
-    item_cable:'📡 Cable',         item_cable_desc:'Cut the antenna cable',
-    item_kite:'🪁 Kite',           item_kite_desc:'Launch a kite',
-    item_key:'🗝️ Key',            item_key_desc:'Slip an old key under the door',
-    item_photo:'📸 Photo',          item_photo_desc:'Leave an old photograph',
-    ev_candy:"Nastya found candy on the windowsill! She thinks it's from a secret admirer. Her cheeks turned pink... 💕",
+    lyudmila_open:'finally opened her window',
+    item_candy:'Candy',        item_candy_desc:'Leave candy on the windowsill',
+    item_cable:'Cable',         item_cable_desc:'Cut the antenna cable',
+    item_kite:'Kite',           item_kite_desc:'Launch a kite',
+    item_key:'Key',            item_key_desc:'Slip an old key under the door',
+    item_photo:'Photo',          item_photo_desc:'Leave an old photograph',
+    ev_candy:"Nastya found candy on the windowsill! She thinks it's from a secret admirer. Her cheeks turned pink...",
     ev_cable:"The antenna is dead! Sergey stayed home and finally started that renovation. The whole building can hear the drill.",
     ev_kite:'A bright kite appeared in the sky! Several neighbors pressed faces to the windows — for a moment they all looked the same way.',
     ev_key:"Masha found an old key under the door. She set out to find what it opens... It led her to the attic, full of someone's secrets.",
@@ -527,12 +527,12 @@ let adSecondsLeft = AD_INTERVAL_S;
    idx = (5 - floor) * 4 + col
 ════════════════════════════════════════════ */
 const CHARS = {
-  viktor:   { id:'viktor',   floor:5, col:0, idx:0,  icon:'👴', nk:'viktor_name'   },
-  masha:    { id:'masha',    floor:4, col:1, idx:5,  icon:'👫', nk:'masha_name'    },
-  dima:     { id:'dima',     floor:3, col:2, idx:10, icon:'🎓', nk:'dima_name'     },
-  nastya:   { id:'nastya',   floor:2, col:3, idx:15, icon:'💃', nk:'nastya_name'   },
-  sergey:   { id:'sergey',   floor:1, col:1, idx:17, icon:'🚕', nk:'sergey_name'   },
-  lyudmila: { id:'lyudmila', floor:2, col:0, idx:12, icon:'👵', nk:'lyudmila_name' },
+  viktor:   { id:'viktor',   floor:5, col:0, idx:0,  icon:'', nk:'viktor_name'   },
+  masha:    { id:'masha',    floor:4, col:1, idx:5,  icon:'', nk:'masha_name'    },
+  dima:     { id:'dima',     floor:3, col:2, idx:10, icon:'', nk:'dima_name'     },
+  nastya:   { id:'nastya',   floor:2, col:3, idx:15, icon:'', nk:'nastya_name'   },
+  sergey:   { id:'sergey',   floor:1, col:1, idx:17, icon:'', nk:'sergey_name'   },
+  lyudmila: { id:'lyudmila', floor:2, col:0, idx:12, icon:'', nk:'lyudmila_name' },
 };
 const charByIdx = {};
 Object.values(CHARS).forEach(c => { charByIdx[c.idx] = c; });
@@ -544,41 +544,41 @@ function charState(id) {
   switch (id) {
     case 'viktor': {
       if (h >= 23 || h < 7)  return { lit:false, curtain:false, stateKey:'sleep',   activity:t('viktor_sleep'), detail:'' };
-      if (h < 9)             return { lit:true,  curtain:false, stateKey:'tea',     activity:t('viktor_tea'),   detail:'☕' };
-      if (h < 22)            return { lit:true,  curtain:false, stateKey:'fix',     activity:t('viktor_fix'),   detail:'⏰🕐🕑' };
-      return                        { lit:true,  curtain:false, stateKey:'tv',      activity:t('viktor_tv'),    detail:'📺' };
+      if (h < 9)             return { lit:true,  curtain:false, stateKey:'tea',     activity:t('viktor_tea'),   detail:'' };
+      if (h < 22)            return { lit:true,  curtain:false, stateKey:'fix',     activity:t('viktor_fix'),   detail:'' };
+      return                        { lit:true,  curtain:false, stateKey:'tv',      activity:t('viktor_tv'),    detail:'' };
     }
     case 'masha': {
       if (h >= 1 && h < 7)   return { lit:false, curtain:false, stateKey:'sleep',   activity:t('masha_sleep'),  detail:'' };
-      if (h >= 7 && h < 9)   return { lit:true,  curtain:false, stateKey:'cook',    activity:t('masha_cook'),   detail:'☕' };
+      if (h >= 7 && h < 9)   return { lit:true,  curtain:false, stateKey:'cook',    activity:t('masha_cook'),   detail:'' };
       if (h >= 19 && h < 23){
         const fight = Math.floor(gameMin / 3) % 2 === 0;
         return { lit:true, curtain:false, stateKey: fight ? 'argue':'makeup',
-          activity: t(fight ? 'masha_argue':'masha_makeup'), detail: fight ? '':'💕' };
+          activity: t(fight ? 'masha_argue':'masha_makeup'), detail: fight ? '':'' };
       }
       return { lit: h >= 17, curtain:false, stateKey:'cook', activity:t('masha_cook'), detail:'' };
     }
     case 'dima': {
       if (h >= 5 && h < 10)  return { lit:false, curtain:false, stateKey:'sleep',   activity:t('dima_sleep'),   detail:'' };
-      if (h >= 10 && h < 18) return { lit:true,  curtain:false, stateKey:'game',    activity:t('dima_game'),    detail:'🎮' };
-      if (h >= 18 && h < 22) return { lit:true,  curtain:false, stateKey:'study',   activity:t('dima_study'),   detail:'📚' };
-      return                        { lit:true,  curtain:false, stateKey:'panic',   activity:t('dima_panic'),   detail:'😰' };
+      if (h >= 10 && h < 18) return { lit:true,  curtain:false, stateKey:'game',    activity:t('dima_game'),    detail:'' };
+      if (h >= 18 && h < 22) return { lit:true,  curtain:false, stateKey:'study',   activity:t('dima_study'),   detail:'' };
+      return                        { lit:true,  curtain:false, stateKey:'panic',   activity:t('dima_panic'),   detail:'' };
     }
     case 'nastya': {
       if (h >= 3 && h < 12)  return { lit:false, curtain:true,  stateKey:'curtain', activity:t('nastya_curtain'), detail:'' };
-      if (h >= 20 && h < 23) return { lit:true,  curtain:false, stateKey:'dance',   activity:t('nastya_dance'),   detail:'🎵' };
+      if (h >= 20 && h < 23) return { lit:true,  curtain:false, stateKey:'dance',   activity:t('nastya_dance'),   detail:'' };
       if (h >= 12 && h < 20) return { lit:false, curtain:true,  stateKey:'curtain', activity:t('nastya_curtain'), detail:'' };
-      return                        { lit:true,  curtain:false, stateKey:'read',    activity:t('nastya_read'),    detail:'🕯️' };
+      return                        { lit:true,  curtain:false, stateKey:'read',    activity:t('nastya_read'),    detail:'' };
     }
     case 'sergey': {
       if (h >= 22 || h < 6)  return { lit:false, curtain:false, stateKey:'sleep',   activity:t('sergey_sleep'), detail:'' };
-      if (h >= 6 && h < 18)  return { lit:false, curtain:false, stateKey:'gone',    activity:t('sergey_gone'),  detail:'🚕' };
-      return                        { lit:true,  curtain:false, stateKey:'tv',      activity:t('sergey_tv'),    detail:'📺' };
+      if (h >= 6 && h < 18)  return { lit:false, curtain:false, stateKey:'gone',    activity:t('sergey_gone'),  detail:'' };
+      return                        { lit:true,  curtain:false, stateKey:'tv',      activity:t('sergey_tv'),    detail:'' };
     }
     case 'lyudmila': {
       const tvOn = (h >= 18 && h < 24) || h < 3;
       return tvOn
-        ? { lit:true,  curtain:true, stateKey:'tv',      activity:t('lyudmila_tv'),      detail:'📺' }
+        ? { lit:true,  curtain:true, stateKey:'tv',      activity:t('lyudmila_tv'),      detail:'' }
         : { lit:false, curtain:true, stateKey:'curtain', activity:t('lyudmila_curtain'), detail:'' };
     }
     default: return { lit:false, curtain:false, stateKey:'empty', activity:t('empty'), detail:'' };
@@ -595,8 +595,8 @@ const ITEMS = [
     use(cid) {
       if (cid !== 'nastya') return;
       showObsEvent(t('ev_candy'));
-      addAlbum('admirer','💕');
-      overrides.nastya = { lit:true, curtain:false, stateKey:'admirer', activity:t('nastya_window'), detail:'💕' };
+      addAlbum('admirer','');
+      overrides.nastya = { lit:true, curtain:false, stateKey:'admirer', activity:t('nastya_window'), detail:'' };
       setTimeout(() => { delete overrides.nastya; renderBuilding(); }, FX_CANDY_MS);
     },
   },
@@ -606,8 +606,8 @@ const ITEMS = [
     use(cid) {
       if (cid !== 'sergey') return;
       showObsEvent(t('ev_cable'));
-      addAlbum('repair','🔨');
-      overrides.sergey = { lit:true, curtain:false, stateKey:'repair', activity:t('sergey_repair'), detail:'🔨' };
+      addAlbum('repair','');
+      overrides.sergey = { lit:true, curtain:false, stateKey:'repair', activity:t('sergey_repair'), detail:'' };
       // persists (override stays)
     },
   },
@@ -616,15 +616,15 @@ const ITEMS = [
     targets: Object.keys(CHARS),
     use(_cid) {
       showObsEvent(t('ev_kite'));
-      addAlbum('kite','🪁');
+      addAlbum('kite','');
       // light up everyone briefly
       Object.values(CHARS).forEach(c => {
         const s = charState(c.id);
-        overrides[c.id] = { ...s, lit:true, detail:'👀' };
+        overrides[c.id] = { ...s, lit:true, detail:'', _kite:true };
       });
       renderBuilding();
       setTimeout(() => {
-        Object.values(CHARS).forEach(c => { if (overrides[c.id] && overrides[c.id].detail === '👀') delete overrides[c.id]; });
+        Object.values(CHARS).forEach(c => { if (overrides[c.id] && overrides[c.id]._kite) delete overrides[c.id]; });
         renderBuilding();
       }, FX_KITE_MS);
     },
@@ -635,8 +635,8 @@ const ITEMS = [
     use(cid) {
       if (cid !== 'masha') return;
       showObsEvent(t('ev_key'));
-      addAlbum('attic','🗝️');
-      overrides.masha = { lit:true, curtain:false, stateKey:'makeup', activity:t('masha_makeup'), detail:'💕' };
+      addAlbum('attic','');
+      overrides.masha = { lit:true, curtain:false, stateKey:'makeup', activity:t('masha_makeup'), detail:'' };
       setTimeout(() => { delete overrides.masha; renderBuilding(); }, FX_KEY_MS);
     },
   },
@@ -646,8 +646,8 @@ const ITEMS = [
     use(cid) {
       if (cid !== 'lyudmila') return;
       showObsEvent(t('ev_photo'));
-      addAlbum('window','🪟');
-      overrides.lyudmila = { lit:true, curtain:false, stateKey:'open', activity:t('lyudmila_open'), detail:'🪟' };
+      addAlbum('window','');
+      overrides.lyudmila = { lit:true, curtain:false, stateKey:'open', activity:t('lyudmila_open'), detail:'' };
       setTimeout(() => { delete overrides.lyudmila; renderBuilding(); }, FX_PHOTO_MS);
     },
   },
@@ -765,17 +765,17 @@ function openObs(idx, char) {
   if (char) {
     const s = charState(char.id);
     frame.className = s.lit ? 'lit' : '';
-    document.getElementById('bino-icon').textContent = s.lit ? char.icon : '🌑';
+    document.getElementById('bino-icon').textContent = s.lit ? char.icon : '';
     document.getElementById('bino-name').textContent = t(char.nk);
     document.getElementById('bino-activity').textContent = s.activity;
     document.getElementById('bino-detail').textContent = s.detail || '';
 
     // Auto-discoveries
-    if (!firstObsDone) { firstObsDone = true; addAlbum('first','🔭'); }
-    if (char.id === 'viktor' && s.lit)              addAlbum('viktor','⏰');
-    if (char.id === 'nastya' && s.stateKey === 'dance') addAlbum('dance','💃');
-    if (char.id === 'dima'   && s.lit)              addAlbum('student','🎓');
-    if (char.id === 'masha'  && s.stateKey === 'argue') addAlbum('couple','💥');
+    if (!firstObsDone) { firstObsDone = true; addAlbum('first',''); }
+    if (char.id === 'viktor' && s.lit)              addAlbum('viktor','');
+    if (char.id === 'nastya' && s.stateKey === 'dance') addAlbum('dance','');
+    if (char.id === 'dima'   && s.lit)              addAlbum('student','');
+    if (char.id === 'masha'  && s.stateKey === 'argue') addAlbum('couple','');
 
     // Item buttons
     ITEMS.filter(it => it.targets.includes(char.id) && !spent[it.id]).forEach(item => {
@@ -793,7 +793,7 @@ function openObs(idx, char) {
         // Refresh obs content
         const ns = charState(char.id);
         frame.className = ns.lit ? 'lit' : '';
-        document.getElementById('bino-icon').textContent = ns.lit ? char.icon : '🌑';
+        document.getElementById('bino-icon').textContent = ns.lit ? char.icon : '';
         document.getElementById('bino-activity').textContent = ns.activity;
         document.getElementById('bino-detail').textContent = ns.detail || '';
       });
@@ -802,7 +802,7 @@ function openObs(idx, char) {
 
   } else {
     frame.className = '';
-    document.getElementById('bino-icon').textContent = '🌃';
+    document.getElementById('bino-icon').textContent = '';
     document.getElementById('bino-name').textContent = t('aptLabel') + ' ' + (idx + 1);
     document.getElementById('bino-activity').textContent = t('empty');
     document.getElementById('bino-detail').textContent = '';
