@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Соседи со второго этажа</title>
+  <style>
+    :root {
+      --bg: #0f0e17;
+      --building: #2a2845;
+      --building-edge: #3d3b6e;
+      --win-lit: #f4a261;
+      --win-dim: #d4824a;
+      --win-dark: #14122a;
+      --panel: rgba(14, 11, 28, 0.97);
+      --txt: #f4e4c1;
+      --txt-dim: #9a8060;
+      --accent: #e9c46a;
+      --accent2: #e76f51;
+      --border: rgba(244, 162, 97, 0.28);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--txt);
+      font-family: 'Courier New', Courier, monospace;
+      user-select: none;
+    }
+    /* ── Layout ─────────────────────────────── */
+    #app { display: flex; flex-direction: column; height: 100vh; }
+    #header {
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 14px;
+      background: rgba(8, 6, 20, 0.92);
+      border-bottom: 1px solid var(--border);
+      z-index: 10;
+    }
+    #title { font-size: .85em; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; }
+    #game-time { font-size: 1.2em; color: var(--accent); min-width: 52px; text-align: center; }
+    #lang-btn {
+      background: transparent; border: 1px solid var(--border); color: var(--txt-dim);
+      padding: 3px 9px; cursor: pointer; font-family: inherit; font-size: .75em;
+      border-radius: 3px; transition: .2s;
+    }
+    #lang-btn:hover { color: var(--accent); border-color: var(--accent); }
+    #scene {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      display: flex; align-items: flex-end; justify-content: center;
+    }
+    /* ── Sky ─────────────────────────────────── */
+    #sky {
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, #0f0e17, #1a1535 65%, #2a1f4a);
+      transition: background 3s;
+    }
+    #stars { position: absolute; inset: 0; pointer-events: none; }
+    .star {
+      position: absolute; background: #fff; border-radius: 50%;
+      animation: twinkle 2s infinite alternate;
+    }
+    @keyframes twinkle { from { opacity: .25 } to { opacity: 1 } }
+    /* ── Rain ────────────────────────────────── */
+    #rain { position: absolute; inset: 0; pointer-events: none; overflow: hidden; opacity: 0; transition: opacity 2s; }
+    #rain.on { opacity: .45; }
+    .rd {
+      position: absolute; width: 1px;
+      background: linear-gradient(180deg, transparent, #8ab4cc);
+      animation: fall linear infinite;
+    }
+    @keyframes fall { from { transform: translateY(-30px); opacity: 0; } 20% { opacity: 1; } 90% { opacity: 1; } to { transform: translateY(110vh); opacity: 0; } }
+    /* ── Building ────────────────────────────── */
+    #building-wrap {
+      position: relative; z-index: 2;
+      width: min(92vw, 580px);
+      padding-bottom: 0;
+    }
+    #roof {
+      height: 18px;
+      background: var(--building-edge);
+      clip-path: polygon(0 100%, 100% 100%, 97% 0, 3% 0);
+      margin-bottom: -1px;
+    }
+    #building {
+      background: var(--building);
+      border: 3px solid var(--building-edge);
+      border-top: none;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      padding: 10px;
+    }
+    #ground {
+      height: 38px;
+      background: linear-gradient(180deg, #18152e, #0f0e17);
+      border-top: 2px solid #221f3a;
+    }
+    /* ── Apartment windows ───────────────────── */
+    .apt {
+      aspect-ratio: 1;
+      min-height: 52px;
+      background: var(--win-dark);
+      border: 2px solid #1a1835;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      transition: transform .15s, border-color .15s, box-shadow .3s;
+    }
+    .apt:hover { transform: scale(1.06); border-color: var(--accent); z-index: 3; }
+    .apt.lit { background: var(--win-lit); border-color: #d4923a; box-shadow: 0 0 14px rgba(244,162,97,.45); }
+    .apt.dim { background: var(--win-dim); border-color: #b06820; box-shadow: 0 0 6px rgba(244,162,97,.2); }
+    .apt.sel { border-color: var(--accent) !important; box-shadow: 0 0 22px var(--accent) !important; z-index: 4; }
+    .apt.curtain::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(90deg, rgba(60,35,10,.52) 0px, rgba(60,35,10,.3) 7px, rgba(60,35,10,.52) 14px);
+      pointer-events: none;
+    }
+    .apt-icon { font-size: 1.35em; pointer-events: none; line-height: 1; }
+    .apt-lbl {
+      font-size: .42em; text-align: center; pointer-events: none;
+      color: rgba(0,0,0,.5); line-height: 1.1; padding: 0 2px;
+      max-width: 100%; overflow: hidden;
+    }
+    .apt.lit .apt-lbl { color: rgba(0,0,0,.55); }
+    /* ── Controls bar ────────────────────────── */
+    #controls {
+      flex-shrink: 0;
+      background: rgba(8, 6, 20, 0.95);
+      border-top: 1px solid var(--border);
+      padding: 7px 10px;
+      display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+      z-index: 10;
+    }
+    #inventory { display: flex; gap: 5px; flex-wrap: wrap; flex: 1; }
+    .item-slot {
+      background: rgba(25,20,50,.8); border: 1px solid var(--border);
+      color: var(--txt); padding: 5px 10px; cursor: pointer; border-radius: 4px;
+      font-family: inherit; font-size: .78em; transition: .2s; white-space: nowrap;
+    }
+    .item-slot:hover { border-color: var(--accent); }
+    .item-slot.active { border-color: var(--accent); color: var(--accent); background: rgba(60,50,110,.9); }
+    .item-slot.spent { opacity: .35; cursor: default; }
+    .ctrl-btn {
+      background: rgba(25,20,50,.8); border: 1px solid var(--border); color: var(--txt);
+      padding: 5px 12px; cursor: pointer; border-radius: 4px;
+      font-family: inherit; font-size: .78em; transition: .2s; white-space: nowrap;
+    }
+    .ctrl-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .badge {
+      background: var(--accent2); color: #fff; font-size: .7em;
+      padding: 1px 5px; border-radius: 10px; margin-left: 4px;
+    }
+    /* ── Notification ────────────────────────── */
+    #notif {
+      position: fixed; top: 54px; left: 50%; transform: translateX(-50%);
+      background: rgba(14,11,28,.97); border: 1px solid var(--accent); color: var(--accent);
+      padding: 7px 18px; border-radius: 18px; font-size: .82em; z-index: 300;
+      opacity: 0; transition: opacity .3s; pointer-events: none; white-space: nowrap;
+      max-width: 90vw; text-overflow: ellipsis; overflow: hidden;
+    }
+    #notif.show { opacity: 1; }
+    /* ── Modal overlay ───────────────────────── */
+    .overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.82);
+      display: none; align-items: center; justify-content: center; z-index: 200;
+    }
+    .overlay.open { display: flex; }
+    .modal {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+      padding: 20px; width: 90vw; max-width: 480px; max-height: 85vh;
+      overflow-y: auto; position: relative;
+    }
+    .modal h2 { color: var(--accent); font-size: 1em; letter-spacing: 1px; margin-bottom: 12px; }
+    .close-btn {
+      position: absolute; top: 10px; right: 10px;
+      background: transparent; border: 1px solid var(--border); color: var(--txt-dim);
+      width: 26px; height: 26px; border-radius: 3px; cursor: pointer;
+      font-family: inherit; font-size: .9em; transition: .2s;
+    }
+    .close-btn:hover { color: var(--accent2); border-color: var(--accent2); }
+    /* ── Binocular obs modal ─────────────────── */
+    #obs-modal { flex-direction: column; gap: 10px; }
+    #bino-wrap { position: relative; width: min(320px, 76vw); height: min(320px, 76vw); }
+    #bino-frame {
+      width: 100%; height: 100%; border-radius: 50%;
+      background: var(--win-dark); border: 8px solid #110f22;
+      box-shadow: 0 0 0 4px #0a0816, 0 0 40px rgba(0,0,0,.9);
+      overflow: hidden; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center;
+      padding: 22px; position: relative; transition: background .4s;
+    }
+    #bino-frame.lit { background: linear-gradient(145deg, #58301a, #4a2810); }
+    #bino-frame::before {
+      content: ''; position: absolute; top: 8%; left: 8%; width: 28%; height: 28%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.07), transparent 70%);
+      border-radius: 50%; pointer-events: none;
+    }
+    #bino-icon { font-size: 3.6em; margin-bottom: 6px; }
+    #bino-name { color: var(--accent); font-size: .9em; font-weight: bold; margin-bottom: 5px; }
+    #bino-activity { color: var(--txt); font-size: .75em; line-height: 1.4; }
+    #bino-detail { color: var(--txt-dim); font-size: .65em; margin-top: 6px; font-style: italic; }
+    #obs-actions { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 6px; }
+    #obs-event {
+      margin-top: 9px; padding: 10px; border-left: 3px solid var(--accent);
+      background: rgba(233,196,106,.07); color: var(--txt); font-size: .78em;
+      line-height: 1.5; border-radius: 0 4px 4px 0; display: none;
+    }
+    .act-btn {
+      background: rgba(25,20,50,.9); border: 1px solid var(--border); color: var(--txt);
+      padding: 5px 12px; cursor: pointer; border-radius: 4px;
+      font-family: inherit; font-size: .78em; transition: .2s;
+    }
+    .act-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .act-btn:disabled { opacity: .35; cursor: default; }
+    #obs-sidebar { width: min(320px, 76vw); }
+    /* ── Album modal ─────────────────────────── */
+    .alb-entry { padding: 9px 0; border-bottom: 1px solid rgba(244,162,97,.1); }
+    .alb-entry:last-child { border-bottom: none; }
+    .alb-icon { float: left; font-size: 1.4em; margin-right: 9px; }
+    .alb-title { color: var(--accent); font-size: .88em; margin-bottom: 2px; }
+    .alb-desc { color: var(--txt-dim); font-size: .72em; line-height: 1.4; }
+    .alb-time { color: var(--accent2); font-size: .62em; margin-top: 3px; }
+    .alb-empty { color: var(--txt-dim); font-style: italic; text-align: center; padding: 20px; }
+    /* ── Ad modal ────────────────────────────── */
+    #ad-modal .modal { text-align: center; }
+    #ad-timer { font-size: 1.4em; color: var(--accent2); margin-bottom: 4px; }
+    #ad-body {
+      background: rgba(25,20,50,.5); border: 1px dashed var(--border);
+      padding: 26px 14px; margin: 10px 0; font-size: .8em; color: var(--txt-dim);
+    }
+    .start-btn {
+      background: var(--accent2); border: none; color: #fff; padding: 9px 28px;
+      cursor: pointer; font-family: inherit; font-size: .95em;
+      border-radius: 4px; letter-spacing: 1px; transition: .2s; margin-top: 6px;
+    }
+    .start-btn:hover:not(:disabled) { background: #c55030; }
+    .start-btn:disabled { opacity: .4; cursor: default; }
+    /* ── Intro modal ─────────────────────────── */
+    #intro-modal .modal { text-align: center; max-width: 420px; }
+    #intro-modal .big { font-size: 3em; margin-bottom: 10px; }
+    #intro-modal p { font-size: .82em; line-height: 1.6; color: var(--txt-dim); margin-bottom: 10px; }
+    /* ── Scrollbar ───────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    /* ── Responsive ──────────────────────────── */
+    @media (max-width: 420px) {
+      #title { font-size: .7em; }
+      .apt { min-height: 44px; }
+      .apt-icon { font-size: 1.1em; }
+      .apt-lbl { font-size: .36em; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <div id="header">
+    <div id="title">🔭 <span data-i18n="title">Соседи со второго этажа</span></div>
+    <div id="game-time">22:00</div>
+    <button id="lang-btn" onclick="toggleLang()">EN</button>
+  </div>
+
+  <!-- SCENE -->
+  <div id="scene">
+    <div id="sky"></div>
+    <div id="stars"></div>
+    <div id="rain"></div>
+
+    <div id="building-wrap">
+      <div id="roof"></div>
+      <div id="building"><!-- filled by JS --></div>
+      <div id="ground"></div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div id="controls">
+    <div id="inventory"><!-- filled by JS --></div>
+    <button class="ctrl-btn" onclick="openAlbum()">
+      📓 <span data-i18n="album">Альбом</span><span class="badge" id="alb-count">0</span>
+    </button>
+  </div>
+
+</div>
+
+<!-- NOTIFICATION TOAST -->
+<div id="notif"></div>
+
+<!-- ─── OBSERVATION MODAL ─── -->
+<div class="overlay" id="obs-modal">
+  <div id="bino-wrap">
+    <div id="bino-frame">
+      <div id="bino-icon">🌃</div>
+      <div id="bino-name"></div>
+      <div id="bino-activity"></div>
+      <div id="bino-detail"></div>
+    </div>
+  </div>
+  <div id="obs-sidebar">
+    <div id="obs-actions"></div>
+    <div id="obs-event"></div>
+    <div style="text-align:right;margin-top:8px;">
+      <button class="act-btn" onclick="closeObs()">✕ <span data-i18n="close">Закрыть</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── ALBUM MODAL ─── -->
+<div class="overlay" id="alb-modal">
+  <div class="modal" style="max-width:540px;">
+    <button class="close-btn" onclick="closeAlbum()">✕</button>
+    <h2>📓 <span data-i18n="obsAlbum">Альбом наблюдений</span></h2>
+    <div id="alb-entries"></div>
+  </div>
+</div>
+
+<!-- ─── AD MODAL ─── -->
+<div class="overlay" id="ad-modal">
+  <div class="modal" style="max-width:360px;">
+    <h2 data-i18n="adTitle">Небольшая реклама</h2>
+    <div id="ad-timer">5</div>
+    <div id="ad-body">
+      <div style="font-size:2em;margin-bottom:8px">🏠</div>
+      <div data-i18n="adText">Снимите квартиру своей мечты!</div>
+      <div style="margin-top:8px;color:#555;font-size:.75em">advertisement</div>
+    </div>
+    <button class="start-btn" id="ad-close-btn" disabled onclick="closeAd()">…</button>
+  </div>
+</div>
+
+<!-- ─── INTRO MODAL ─── -->
+<div class="overlay open" id="intro-modal">
+  <div class="modal">
+    <div class="big">🔭</div>
+    <h2 data-i18n="introTitle">Соседи со второго этажа</h2>
+    <p data-i18n="introText">Вы только что переехали в старую панельку и обнаружили, что ваши окна выходят прямиком на фасад соседнего дома. Возьмите бинокль и понаблюдайте за соседями!</p>
+    <p data-i18n="introHint">Нажмите на светящееся окно, чтобы понаблюдать. Используйте предметы из инвентаря, чтобы влиять на жизнь соседей.</p>
+    <button class="start-btn" onclick="startGame()" data-i18n="introStart">Начать наблюдение</button>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════
+   i18n
+════════════════════════════════════════════ */
+const STRINGS = {
+  ru: {
+    title:'Соседи со второго этажа', album:'Альбом', obsAlbum:'Альбом наблюдений',
+    close:'Закрыть', adTitle:'Небольшая реклама', adText:'Снимите квартиру своей мечты!',
+    adContinue:'Продолжить', adWait:'Пропустить через ',
+    introTitle:'Соседи со второго этажа',
+    introText:'Вы только что переехали в старую панельку и обнаружили, что ваши окна выходят прямиком на фасад соседнего дома. Возьмите бинокль и понаблюдайте за соседями!',
+    introHint:'Нажмите на светящееся окно, чтобы понаблюдать. Используйте предметы из инвентаря, чтобы влиять на жизнь соседей.',
+    introStart:'Начать наблюдение',
+    empty:'Темно. Никого нет.',
+    aptLabel:'кв.',
+    newDisc:'🔍 Новое открытие! ',
+    // characters
+    viktor_name:'Виктор Палыч',
+    viktor_fix:'чинит старые часы',
+    viktor_sleep:'дремлет в кресле',
+    viktor_tv:'ворчит на телевизор',
+    viktor_tea:'пьёт чай из блюдца',
+    masha_name:'Маша и Коля',
+    masha_argue:'ссорятся 😤',
+    masha_makeup:'мирятся 💕',
+    masha_cook:'готовят ужин вместе',
+    masha_sleep:'спят',
+    dima_name:'Дима-студент',
+    dima_study:'сидит над учебниками 📚',
+    dima_game:'играет вместо учёбы 🎮',
+    dima_sleep:'отрубился за столом',
+    dima_panic:'в панике листает конспекты! 😰',
+    nastya_name:'Таинственная Настя',
+    nastya_dance:'танцует в наушниках 🎧',
+    nastya_curtain:'шторы задёрнуты...',
+    nastya_read:'читает при свечах',
+    nastya_window:'выглядывает в окно 👀',
+    sergey_name:'Серёга-таксист',
+    sergey_gone:'уехал на смену',
+    sergey_repair:'дома, делает ремонт 🔨',
+    sergey_sleep:'спит после ночной',
+    sergey_tv:'смотрит телевизор',
+    lyudmila_name:'Людмила Ивановна',
+    lyudmila_curtain:'шторы не открывает...',
+    lyudmila_tv:'мерцает экран телевизора',
+    lyudmila_open:'наконец открыла окно 🪟',
+    // items
+    item_candy:'🍬 Конфеты',       item_candy_desc:'Оставить конфеты на подоконнике',
+    item_cable:'📡 Кабель',         item_cable_desc:'Перерезать антенный кабель',
+    item_kite:'🪁 Змей',            item_kite_desc:'Запустить воздушного змея',
+    item_key:'🗝️ Ключ',            item_key_desc:'Подбросить старый ключ',
+    item_photo:'📸 Фото',           item_photo_desc:'Подбросить старое фото',
+    // events
+    ev_candy:'Настя нашла конфеты на подоконнике! Она думает, что это подарок от тайного поклонника. Её щёки порозовели... 💕',
+    ev_cable:'Антенна больше не работает! Серёга остался дома и наконец взялся за долгожданный ремонт. Теперь весь подъезд слышит дрель.',
+    ev_kite:'Яркий воздушный змей появился в небе! Несколько соседей прильнули к окнам — хотя бы на минуту все смотрели в одну сторону.',
+    ev_key:'Маша нашла под дверью старый ключ. Она решила выяснить, от чего он... Это привело её на чердак, где хранятся чужие тайны.',
+    ev_photo:'Людмила Ивановна нашла старую фотографию. Она долго смотрела на неё, а потом впервые за месяц открыла окно.',
+    // album
+    alb_first:'Первое наблюдение',      alb_first_d:'Вы впервые заглянули в чужое окно. Добро пожаловать в мир тихих наблюдений.',
+    alb_viktor:'Мастер часов',           alb_viktor_d:'Виктор Палыч чинит часы уже 40 лет. На полке за его спиной — больше двадцати старинных механизмов.',
+    alb_couple:'Семейная сцена',         alb_couple_d:'Маша и Коля снова поссорились. Но они всегда мирятся ещё нежнее.',
+    alb_student:'Ночной студент',        alb_student_d:'Дима снова не спит в час ночи. Банка энергетика, конспекты и тихая паника — классическая сессия.',
+    alb_dance:'Танец в темноте',         alb_dance_d:'Каждый вечер Настя танцует одна. Движения профессиональные. Почему она не выходит из дома?',
+    alb_repair:'Долгожданный ремонт',    alb_repair_d:'Серёга наконец-то остался дома. Говорят, он обещал ремонт ещё три года назад.',
+    alb_window:'Окно открылось',         alb_window_d:'Впервые за долгое время Людмила Ивановна открыла окно. Что было в той фотографии?',
+    alb_kite:'Воздушный змей',           alb_kite_d:'Воздушный змей объединил соседей — хотя бы на минуту.',
+    alb_admirer:'Тайный поклонник',      alb_admirer_d:'Настя весь вечер думала о конфетах. Она даже выглянула в окно.',
+    alb_attic:'Чердачная тайна',         alb_attic_d:'Маша нашла ключ и ушла на чердак. Интересно, что она там нашла?',
+  },
+  en: {
+    title:'Neighbors Upstairs', album:'Album', obsAlbum:'Observation Album',
+    close:'Close', adTitle:'Quick Ad Break', adText:'Find your dream apartment!',
+    adContinue:'Continue', adWait:'Skip in ',
+    introTitle:'Neighbors Upstairs',
+    introText:"You've just moved into an old panel building and discovered your windows look right at the neighbors' facade. Grab your binoculars!",
+    introHint:"Click a lit window to observe. Use items from your inventory to influence your neighbors' lives.",
+    introStart:'Start Watching',
+    empty:'Dark. Nobody home.',
+    aptLabel:'Apt',
+    newDisc:'🔍 New Discovery! ',
+    viktor_name:'Viktor Palich',
+    viktor_fix:'fixing old clocks',
+    viktor_sleep:'napping in armchair',
+    viktor_tv:'grumbling at the TV',
+    viktor_tea:'drinking tea from saucer',
+    masha_name:'Masha & Kolya',
+    masha_argue:'having a fight 😤',
+    masha_makeup:'making up 💕',
+    masha_cook:'cooking dinner together',
+    masha_sleep:'sleeping',
+    dima_name:'Dima the Student',
+    dima_study:'studying hard 📚',
+    dima_game:'gaming instead of studying 🎮',
+    dima_sleep:'passed out at the desk',
+    dima_panic:'panicking over notes! 😰',
+    nastya_name:'Mysterious Nastya',
+    nastya_dance:'dancing with headphones 🎧',
+    nastya_curtain:'curtains drawn...',
+    nastya_read:'reading by candlelight',
+    nastya_window:'peeking out the window 👀',
+    sergey_name:'Sergey the Cabbie',
+    sergey_gone:'out on shift',
+    sergey_repair:'home, doing repairs 🔨',
+    sergey_sleep:'sleeping after night shift',
+    sergey_tv:'watching TV',
+    lyudmila_name:'Lyudmila Ivanovna',
+    lyudmila_curtain:"curtains never open...",
+    lyudmila_tv:'TV screen flickering',
+    lyudmila_open:'finally opened her window 🪟',
+    item_candy:'🍬 Candy',        item_candy_desc:'Leave candy on the windowsill',
+    item_cable:'📡 Cable',         item_cable_desc:'Cut the antenna cable',
+    item_kite:'🪁 Kite',           item_kite_desc:'Launch a kite',
+    item_key:'🗝️ Key',            item_key_desc:'Slip an old key under the door',
+    item_photo:'📸 Photo',          item_photo_desc:'Leave an old photograph',
+    ev_candy:"Nastya found candy on the windowsill! She thinks it's from a secret admirer. Her cheeks turned pink... 💕",
+    ev_cable:"The antenna is dead! Sergey stayed home and finally started that renovation. The whole building can hear the drill.",
+    ev_kite:'A bright kite appeared in the sky! Several neighbors pressed faces to the windows — for a moment they all looked the same way.',
+    ev_key:"Masha found an old key under the door. She set out to find what it opens... It led her to the attic, full of someone's secrets.",
+    ev_photo:"Lyudmila Ivanovna found an old photograph. She stared at it, then opened her window for the first time in months.",
+    alb_first:'First Observation',      alb_first_d:"You've peeked into a neighbor's window for the first time. Welcome to the world of quiet watching.",
+    alb_viktor:'The Clock Master',       alb_viktor_d:"Viktor Palich has been fixing clocks for 40 years. Behind him — over twenty antique mechanisms.",
+    alb_couple:'Domestic Drama',         alb_couple_d:"Masha and Kolya are fighting again. But they always make up even more tenderly.",
+    alb_student:'Night Student',         alb_student_d:"Dima's up again at 1am. An energy drink, notes, and quiet panic — classic exam season.",
+    alb_dance:'Dance in the Dark',       alb_dance_d:"Every evening Nastya dances alone. Her moves look professional. Why does she never go outside?",
+    alb_repair:'Long-Awaited Repair',    alb_repair_d:"Sergey finally stayed home. Rumor has it he promised to renovate three years ago.",
+    alb_window:'The Window Opens',       alb_window_d:"For the first time in ages, Lyudmila Ivanovna opened her window. What was in that photograph?",
+    alb_kite:'The Kite',                 alb_kite_d:'The kite brought the neighbors together — for at least a minute.',
+    alb_admirer:'Secret Admirer',        alb_admirer_d:"Nastya thought about the candy all evening. She even peeked out the window.",
+    alb_attic:'Attic Secret',            alb_attic_d:"Masha found the key and went to the attic. What did she find there?",
+  },
+};
+
+let lang = 'ru';
+const t = k => (STRINGS[lang][k] ?? STRINGS.ru[k] ?? k);
+
+function applyI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.dataset.i18n);
+  });
+}
+function toggleLang() {
+  lang = lang === 'ru' ? 'en' : 'ru';
+  document.getElementById('lang-btn').textContent = lang === 'ru' ? 'EN' : 'RU';
+  document.documentElement.lang = lang;
+  applyI18n();
+  renderInventory();
+  renderBuilding();
+  // Re-render album if open
+  if (document.getElementById('alb-modal').classList.contains('open')) renderAlbum();
+}
+
+/* ════════════════════════════════════════════
+   Game state
+════════════════════════════════════════════ */
+// ── Tunable constants ─────────────────────────
+const GAME_TICK_MS       = 1000;  // 1 real second = 1 game minute
+const AD_INTERVAL_S      = 5 * 60; // show ad every 5 real minutes
+const FX_CANDY_MS        = 25000; // candy effect duration (ms)
+const FX_KITE_MS         = 10000; // kite effect duration (ms)
+const FX_KEY_MS          = 20000; // key effect duration (ms)
+const FX_PHOTO_MS        = 30000; // photo effect duration (ms)
+// ─────────────────────────────────────────────
+
+let gameHour = 22, gameMin = 0;
+let gameStarted = false;
+let selectedItem = null;
+let selectedIdx = null;
+const spent = {};          // item id → true when used
+const overrides = {};      // char id → state object override
+const albumEntries = [];
+let firstObsDone = false;
+let adSecondsLeft = AD_INTERVAL_S;
+
+/* ════════════════════════════════════════════
+   Character definitions
+   Grid: 5 floors × 4 cols  (floor 5 top → floor 1 bottom)
+   idx = (5 - floor) * 4 + col
+════════════════════════════════════════════ */
+const CHARS = {
+  viktor:   { id:'viktor',   floor:5, col:0, idx:0,  icon:'👴', nk:'viktor_name'   },
+  masha:    { id:'masha',    floor:4, col:1, idx:5,  icon:'👫', nk:'masha_name'    },
+  dima:     { id:'dima',     floor:3, col:2, idx:10, icon:'🎓', nk:'dima_name'     },
+  nastya:   { id:'nastya',   floor:2, col:3, idx:15, icon:'💃', nk:'nastya_name'   },
+  sergey:   { id:'sergey',   floor:1, col:1, idx:17, icon:'🚕', nk:'sergey_name'   },
+  lyudmila: { id:'lyudmila', floor:2, col:0, idx:12, icon:'👵', nk:'lyudmila_name' },
+};
+const charByIdx = {};
+Object.values(CHARS).forEach(c => { charByIdx[c.idx] = c; });
+
+// Returns { activity, detail, lit, curtain, stateKey }
+function charState(id) {
+  if (overrides[id]) return overrides[id];
+  const h = gameHour;
+  switch (id) {
+    case 'viktor': {
+      if (h >= 23 || h < 7)  return { lit:false, curtain:false, stateKey:'sleep',   activity:t('viktor_sleep'), detail:'' };
+      if (h < 9)             return { lit:true,  curtain:false, stateKey:'tea',     activity:t('viktor_tea'),   detail:'☕' };
+      if (h < 22)            return { lit:true,  curtain:false, stateKey:'fix',     activity:t('viktor_fix'),   detail:'⏰🕐🕑' };
+      return                        { lit:true,  curtain:false, stateKey:'tv',      activity:t('viktor_tv'),    detail:'📺' };
+    }
+    case 'masha': {
+      if (h >= 1 && h < 7)   return { lit:false, curtain:false, stateKey:'sleep',   activity:t('masha_sleep'),  detail:'' };
+      if (h >= 7 && h < 9)   return { lit:true,  curtain:false, stateKey:'cook',    activity:t('masha_cook'),   detail:'☕' };
+      if (h >= 19 && h < 23){
+        const fight = Math.floor(gameMin / 3) % 2 === 0;
+        return { lit:true, curtain:false, stateKey: fight ? 'argue':'makeup',
+          activity: t(fight ? 'masha_argue':'masha_makeup'), detail: fight ? '':'💕' };
+      }
+      return { lit: h >= 17, curtain:false, stateKey:'cook', activity:t('masha_cook'), detail:'' };
+    }
+    case 'dima': {
+      if (h >= 5 && h < 10)  return { lit:false, curtain:false, stateKey:'sleep',   activity:t('dima_sleep'),   detail:'' };
+      if (h >= 10 && h < 18) return { lit:true,  curtain:false, stateKey:'game',    activity:t('dima_game'),    detail:'🎮' };
+      if (h >= 18 && h < 22) return { lit:true,  curtain:false, stateKey:'study',   activity:t('dima_study'),   detail:'📚' };
+      return                        { lit:true,  curtain:false, stateKey:'panic',   activity:t('dima_panic'),   detail:'😰' };
+    }
+    case 'nastya': {
+      if (h >= 3 && h < 12)  return { lit:false, curtain:true,  stateKey:'curtain', activity:t('nastya_curtain'), detail:'' };
+      if (h >= 20 && h < 23) return { lit:true,  curtain:false, stateKey:'dance',   activity:t('nastya_dance'),   detail:'🎵' };
+      if (h >= 12 && h < 20) return { lit:false, curtain:true,  stateKey:'curtain', activity:t('nastya_curtain'), detail:'' };
+      return                        { lit:true,  curtain:false, stateKey:'read',    activity:t('nastya_read'),    detail:'🕯️' };
+    }
+    case 'sergey': {
+      if (h >= 22 || h < 6)  return { lit:false, curtain:false, stateKey:'sleep',   activity:t('sergey_sleep'), detail:'' };
+      if (h >= 6 && h < 18)  return { lit:false, curtain:false, stateKey:'gone',    activity:t('sergey_gone'),  detail:'🚕' };
+      return                        { lit:true,  curtain:false, stateKey:'tv',      activity:t('sergey_tv'),    detail:'📺' };
+    }
+    case 'lyudmila': {
+      const tvOn = (h >= 18 && h < 24) || h < 3;
+      return tvOn
+        ? { lit:true,  curtain:true, stateKey:'tv',      activity:t('lyudmila_tv'),      detail:'📺' }
+        : { lit:false, curtain:true, stateKey:'curtain', activity:t('lyudmila_curtain'), detail:'' };
+    }
+    default: return { lit:false, curtain:false, stateKey:'empty', activity:t('empty'), detail:'' };
+  }
+}
+
+/* ════════════════════════════════════════════
+   Items
+════════════════════════════════════════════ */
+const ITEMS = [
+  {
+    id:'candy', ek:'item_candy', dk:'item_candy_desc',
+    targets:['nastya'],
+    use(cid) {
+      if (cid !== 'nastya') return;
+      showObsEvent(t('ev_candy'));
+      addAlbum('admirer','💕');
+      overrides.nastya = { lit:true, curtain:false, stateKey:'admirer', activity:t('nastya_window'), detail:'💕' };
+      setTimeout(() => { delete overrides.nastya; renderBuilding(); }, FX_CANDY_MS);
+    },
+  },
+  {
+    id:'cable', ek:'item_cable', dk:'item_cable_desc',
+    targets:['sergey'],
+    use(cid) {
+      if (cid !== 'sergey') return;
+      showObsEvent(t('ev_cable'));
+      addAlbum('repair','🔨');
+      overrides.sergey = { lit:true, curtain:false, stateKey:'repair', activity:t('sergey_repair'), detail:'🔨' };
+      // persists (override stays)
+    },
+  },
+  {
+    id:'kite', ek:'item_kite', dk:'item_kite_desc',
+    targets: Object.keys(CHARS),
+    use(_cid) {
+      showObsEvent(t('ev_kite'));
+      addAlbum('kite','🪁');
+      // light up everyone briefly
+      Object.values(CHARS).forEach(c => {
+        const s = charState(c.id);
+        overrides[c.id] = { ...s, lit:true, detail:'👀' };
+      });
+      renderBuilding();
+      setTimeout(() => {
+        Object.values(CHARS).forEach(c => { if (overrides[c.id] && overrides[c.id].detail === '👀') delete overrides[c.id]; });
+        renderBuilding();
+      }, FX_KITE_MS);
+    },
+  },
+  {
+    id:'key', ek:'item_key', dk:'item_key_desc',
+    targets:['masha'],
+    use(cid) {
+      if (cid !== 'masha') return;
+      showObsEvent(t('ev_key'));
+      addAlbum('attic','🗝️');
+      overrides.masha = { lit:true, curtain:false, stateKey:'makeup', activity:t('masha_makeup'), detail:'💕' };
+      setTimeout(() => { delete overrides.masha; renderBuilding(); }, FX_KEY_MS);
+    },
+  },
+  {
+    id:'photo', ek:'item_photo', dk:'item_photo_desc',
+    targets:['lyudmila'],
+    use(cid) {
+      if (cid !== 'lyudmila') return;
+      showObsEvent(t('ev_photo'));
+      addAlbum('window','🪟');
+      overrides.lyudmila = { lit:true, curtain:false, stateKey:'open', activity:t('lyudmila_open'), detail:'🪟' };
+      setTimeout(() => { delete overrides.lyudmila; renderBuilding(); }, FX_PHOTO_MS);
+    },
+  },
+];
+
+/* ════════════════════════════════════════════
+   Album
+════════════════════════════════════════════ */
+function addAlbum(key, icon) {
+  if (albumEntries.find(e => e.key === key)) return;
+  const title = t('alb_' + key);
+  albumEntries.push({ key, icon, title, desc: t('alb_' + key + '_d'), time: fmtTime() });
+  document.getElementById('alb-count').textContent = albumEntries.length;
+  showNotif(t('newDisc') + title);
+}
+
+/* ════════════════════════════════════════════
+   Building rendering
+════════════════════════════════════════════ */
+function renderBuilding() {
+  const bld = document.getElementById('building');
+  bld.innerHTML = '';
+  for (let floor = 5; floor >= 1; floor--) {
+    for (let col = 0; col < 4; col++) {
+      const idx = (5 - floor) * 4 + col;
+      const apt = document.createElement('div');
+      apt.className = 'apt';
+      apt.dataset.idx = idx;
+
+      const char = charByIdx[idx];
+      if (char) {
+        const s = charState(char.id);
+        if (s.lit) apt.classList.add('lit');
+        if (s.curtain) apt.classList.add('curtain');
+        if (s.lit || s.curtain) {
+          const ico = document.createElement('div');
+          ico.className = 'apt-icon';
+          ico.textContent = char.icon;
+          apt.appendChild(ico);
+          if (s.lit) {
+            const lbl = document.createElement('div');
+            lbl.className = 'apt-lbl';
+            lbl.textContent = s.activity;
+            apt.appendChild(lbl);
+          }
+        }
+      } else {
+        // Generic neighbour — pseudo-random light
+        const seed = idx * 137 + Math.floor(gameHour / 2);
+        const isNight = gameHour >= 18 || gameHour < 6;
+        if (isNight && seed % 5 !== 0) apt.classList.add(seed % 7 === 0 ? 'dim' : 'lit');
+      }
+
+      if (idx === selectedIdx) apt.classList.add('sel');
+      apt.addEventListener('click', () => onAptClick(idx, char));
+      bld.appendChild(apt);
+    }
+  }
+}
+
+/* ════════════════════════════════════════════
+   Inventory
+════════════════════════════════════════════ */
+function renderInventory() {
+  const inv = document.getElementById('inventory');
+  inv.innerHTML = '';
+  ITEMS.forEach(item => {
+    const s = document.createElement('div');
+    const isSpent = !!spent[item.id];
+    const isActive = selectedItem && selectedItem.id === item.id;
+    s.className = 'item-slot' + (isSpent ? ' spent' : '') + (isActive ? ' active' : '');
+    s.title = t(item.dk);
+    s.textContent = t(item.ek);
+    if (!isSpent) s.addEventListener('click', () => toggleItem(item));
+    inv.appendChild(s);
+  });
+}
+
+function toggleItem(item) {
+  if (spent[item.id]) return;
+  selectedItem = (selectedItem && selectedItem.id === item.id) ? null : item;
+  renderInventory();
+  if (selectedItem) showNotif(t(selectedItem.dk));
+}
+
+/* ════════════════════════════════════════════
+   Apartment click
+════════════════════════════════════════════ */
+function onAptClick(idx, char) {
+  selectedIdx = idx;
+  // If item selected and target matches → use immediately
+  if (selectedItem && char && selectedItem.targets.includes(char.id) && !spent[selectedItem.id]) {
+    spent[selectedItem.id] = true;
+    selectedItem.use(char.id);
+    selectedItem = null;
+    renderInventory();
+    renderBuilding();
+    openObs(idx, char);
+    return;
+  }
+  openObs(idx, char);
+  renderBuilding();
+}
+
+/* ════════════════════════════════════════════
+   Observation modal
+════════════════════════════════════════════ */
+function openObs(idx, char) {
+  document.getElementById('obs-modal').classList.add('open');
+  document.getElementById('obs-event').style.display = 'none';
+  const frame = document.getElementById('bino-frame');
+  const actions = document.getElementById('obs-actions');
+  actions.innerHTML = '';
+
+  if (char) {
+    const s = charState(char.id);
+    frame.className = s.lit ? 'lit' : '';
+    document.getElementById('bino-icon').textContent = s.lit ? char.icon : '🌑';
+    document.getElementById('bino-name').textContent = t(char.nk);
+    document.getElementById('bino-activity').textContent = s.activity;
+    document.getElementById('bino-detail').textContent = s.detail || '';
+
+    // Auto-discoveries
+    if (!firstObsDone) { firstObsDone = true; addAlbum('first','🔭'); }
+    if (char.id === 'viktor' && s.lit)              addAlbum('viktor','⏰');
+    if (char.id === 'nastya' && s.stateKey === 'dance') addAlbum('dance','💃');
+    if (char.id === 'dima'   && s.lit)              addAlbum('student','🎓');
+    if (char.id === 'masha'  && s.stateKey === 'argue') addAlbum('couple','💥');
+
+    // Item buttons
+    ITEMS.filter(it => it.targets.includes(char.id) && !spent[it.id]).forEach(item => {
+      const btn = document.createElement('button');
+      btn.className = 'act-btn';
+      btn.textContent = t(item.ek);
+      btn.addEventListener('click', () => {
+        if (spent[item.id]) return;
+        spent[item.id] = true;
+        selectedItem = null;
+        item.use(char.id);
+        renderInventory();
+        renderBuilding();
+        btn.disabled = true;
+        // Refresh obs content
+        const ns = charState(char.id);
+        frame.className = ns.lit ? 'lit' : '';
+        document.getElementById('bino-icon').textContent = ns.lit ? char.icon : '🌑';
+        document.getElementById('bino-activity').textContent = ns.activity;
+        document.getElementById('bino-detail').textContent = ns.detail || '';
+      });
+      actions.appendChild(btn);
+    });
+
+  } else {
+    frame.className = '';
+    document.getElementById('bino-icon').textContent = '🌃';
+    document.getElementById('bino-name').textContent = t('aptLabel') + ' ' + (idx + 1);
+    document.getElementById('bino-activity').textContent = t('empty');
+    document.getElementById('bino-detail').textContent = '';
+  }
+}
+
+function showObsEvent(txt) {
+  const el = document.getElementById('obs-event');
+  el.textContent = txt;
+  el.style.display = 'block';
+}
+
+function closeObs() {
+  document.getElementById('obs-modal').classList.remove('open');
+  selectedIdx = null;
+  renderBuilding();
+}
+
+/* ════════════════════════════════════════════
+   Album modal
+════════════════════════════════════════════ */
+function openAlbum() {
+  document.getElementById('alb-modal').classList.add('open');
+  renderAlbum();
+}
+function closeAlbum() { document.getElementById('alb-modal').classList.remove('open'); }
+function renderAlbum() {
+  const c = document.getElementById('alb-entries');
+  if (!albumEntries.length) {
+    c.innerHTML = '<div class="alb-empty">' + t('introHint') + '</div>';
+    return;
+  }
+  c.innerHTML = albumEntries.map(e =>
+    `<div class="alb-entry">
+      <span class="alb-icon">${e.icon}</span>
+      <div class="alb-title">${e.title}</div>
+      <div class="alb-desc">${e.desc}</div>
+      <div class="alb-time">${e.time}</div>
+    </div>`
+  ).join('');
+}
+
+/* ════════════════════════════════════════════
+   Ad system (Yandex Games SDK + fallback)
+════════════════════════════════════════════ */
+let ysdk = null;
+
+// Try to load Yandex SDK; silently fall back if not on the platform
+(function loadYaSDK() {
+  if (document.querySelector('script[src="/sdk.js"]')) return; // guard against double-load
+  const script = document.createElement('script');
+  script.src = '/sdk.js';
+  script.onload = () => {
+    if (typeof YaGames !== 'undefined') {
+      YaGames.init()
+        .then(sdk => { ysdk = sdk; })
+        .catch(() => { ysdk = null; });
+    }
+  };
+  script.onerror = () => { ysdk = null; };
+  document.head.appendChild(script);
+}());
+
+function triggerAd() {
+  if (ysdk) {
+    ysdk.adv.showFullscreenAdv({
+      callbacks: {
+        onOpen()  { document.getElementById('ad-modal').classList.add('open'); },
+        onClose() { document.getElementById('ad-modal').classList.remove('open'); },
+        onError() { showFallbackAd(); },
+      },
+    });
+  } else {
+    showFallbackAd();
+  }
+}
+
+function showFallbackAd() {
+  const modal = document.getElementById('ad-modal');
+  modal.classList.add('open');
+  const closeBtn = document.getElementById('ad-close-btn');
+  closeBtn.disabled = true;
+  let cd = 5;
+  document.getElementById('ad-timer').textContent = cd;
+  closeBtn.textContent = t('adWait') + cd + 's';
+  const iv = setInterval(() => {
+    cd--;
+    document.getElementById('ad-timer').textContent = cd;
+    if (cd <= 0) {
+      clearInterval(iv);
+      closeBtn.disabled = false;
+      closeBtn.textContent = t('adContinue');
+    } else {
+      closeBtn.textContent = t('adWait') + cd + 's';
+    }
+  }, 1000);
+}
+
+function closeAd() { document.getElementById('ad-modal').classList.remove('open'); }
+
+/* ════════════════════════════════════════════
+   Time & sky
+════════════════════════════════════════════ */
+function fmtTime() {
+  return String(gameHour).padStart(2,'0') + ':' + String(gameMin).padStart(2,'0');
+}
+function updateSky() {
+  const sky = document.getElementById('sky');
+  const stars = document.getElementById('stars');
+  const h = gameHour;
+  if (h >= 6 && h < 8) {
+    sky.style.background = 'linear-gradient(180deg, #2a1a4b, #6a3a2a 60%, #e8804a)';
+    stars.style.opacity = '.25';
+  } else if (h >= 8 && h < 18) {
+    sky.style.background = 'linear-gradient(180deg, #1a3a6b, #2a5a9b 60%, #4a7aab)';
+    stars.style.opacity = '0';
+  } else if (h >= 18 && h < 21) {
+    sky.style.background = 'linear-gradient(180deg, #1a1040, #4a2a2a 60%, #c05830)';
+    stars.style.opacity = '.5';
+  } else {
+    sky.style.background = 'linear-gradient(180deg, #0f0e17, #1a1535 65%, #2a1f4a)';
+    stars.style.opacity = '1';
+  }
+}
+
+let tickIv = null, adTickIv = null;
+
+function startGameLoop() {
+  clearInterval(tickIv);
+  tickIv = setInterval(() => {
+    gameMin++;
+    if (gameMin >= 60) { gameMin = 0; gameHour = (gameHour + 1) % 24; renderBuilding(); updateSky(); }
+    document.getElementById('game-time').textContent = fmtTime();
+    // Rain: on at 19:00, off at 21:00
+    if (gameHour === 19 && gameMin === 0) setRain(true);
+    if (gameHour === 21 && gameMin === 0) setRain(false);
+  }, GAME_TICK_MS); // 1 real s = 1 game min
+
+  clearInterval(adTickIv);
+  adTickIv = setInterval(() => {
+    adSecondsLeft--;
+    if (adSecondsLeft <= 0) { adSecondsLeft = AD_INTERVAL_S; triggerAd(); }
+  }, GAME_TICK_MS);
+}
+
+/* ════════════════════════════════════════════
+   Rain
+════════════════════════════════════════════ */
+function setRain(on) {
+  const rain = document.getElementById('rain');
+  if (on && !rain.classList.contains('on')) {
+    rain.innerHTML = '';
+    for (let i = 0; i < 70; i++) {
+      const d = document.createElement('div');
+      d.className = 'rd';
+      d.style.left = Math.random() * 100 + '%';
+      d.style.height = (Math.random() * 15 + 10) + 'px';
+      d.style.animationDuration = (Math.random() * .5 + .6) + 's';
+      d.style.animationDelay = (Math.random() * 2) + 's';
+      rain.appendChild(d);
+    }
+    rain.classList.add('on');
+  } else {
+    rain.classList.remove('on');
+  }
+}
+
+/* ════════════════════════════════════════════
+   Stars
+════════════════════════════════════════════ */
+function createStars() {
+  const c = document.getElementById('stars');
+  for (let i = 0; i < 90; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const sz = Math.random() * 2 + 1;
+    s.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*80}%;` +
+      `animation-delay:${Math.random()*2}s;animation-duration:${Math.random()*2+1.5}s`;
+    c.appendChild(s);
+  }
+}
+
+/* ════════════════════════════════════════════
+   Notification
+════════════════════════════════════════════ */
+let notifTmr = null;
+function showNotif(txt) {
+  const el = document.getElementById('notif');
+  el.textContent = txt;
+  el.classList.add('show');
+  clearTimeout(notifTmr);
+  notifTmr = setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+/* ════════════════════════════════════════════
+   Start
+════════════════════════════════════════════ */
+function startGame() {
+  gameStarted = true;
+  document.getElementById('intro-modal').classList.remove('open');
+  renderBuilding();
+  renderInventory();
+  updateSky();
+  startGameLoop();
+}
+
+// Pre-render before start
+createStars();
+renderBuilding();
+renderInventory();
+updateSky();
+</script>
+</body>
+</html>
